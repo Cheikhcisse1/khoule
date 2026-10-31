@@ -239,6 +239,15 @@ textarea { resize: vertical; }
 .nav-item:hover { background: rgba(255, 255, 255, .07); color: #fff; }
 .nav-item.active { background: var(--gold); color: var(--green-900); }
 .nav-icon { width: 1.4rem; text-align: center; }
+.nav-section { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: #8fb39c; padding: .9rem .75rem .3rem; font-weight: 800; }
+.quick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: .75rem; }
+.quick { display: grid; gap: .2rem; padding: .9rem 1rem; border: 1px solid var(--line); border-radius: 12px; background: #fff; color: inherit; text-decoration: none !important; transition: border-color .15s, transform .15s; }
+.quick:hover { border-color: var(--green-700); transform: translateY(-1px); }
+.quick-icon { font-size: 1.4rem; }
+.quick small { color: var(--muted); }
+.quick .badge { justify-self: start; }
+.admin-enroll { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; padding: .75rem; margin-bottom: 1rem; background: var(--gold-100); border-radius: 12px; }
+.admin-enroll select { max-width: 320px; }
 .sidebar .logo-text { color: #fff; }
 .sidebar-overlay { display: none; }
 .main { min-width: 0; display: flex; flex-direction: column; }

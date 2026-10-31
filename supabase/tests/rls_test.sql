@@ -246,6 +246,27 @@ do $$ begin
 end $$;
 reset role;
 
+-- ---------- Admin : changement de rôle et inscription manuelle --------------
+select tests.login(:s3); set role authenticated;
+select tests.should_fail(format($q$insert into public.instructors (profile_id) values (%L)$q$, :s3));
+reset role;
+select tests.login(:admin); set role authenticated;
+update public.profiles set role = 'instructor' where id = :s3;
+insert into public.instructors (profile_id, application_status) values (:s3, 'approved')
+  on conflict (profile_id) do update set application_status = excluded.application_status;
+update public.profiles set role = 'student' where id = :s3;
+insert into public.enrollments (course_id, student_id) values ('dddddddd-0000-0000-0000-000000000001', :s2);
+do $$ begin
+  assert (select count(*) from public.instructors where profile_id = 'cccccccc-0000-0000-0000-000000000003') = 1,
+         'T36 : l''admin crée une fiche intervenant';
+  assert (select count(*) from public.enrollments where student_id = 'cccccccc-0000-0000-0000-000000000002') = 1,
+         'T37 : l''admin inscrit un élève';
+  raise notice 'OK  admin : changement de rôle, inscription manuelle (interdit aux autres)';
+end $$;
+delete from public.enrollments where student_id = :s2;
+delete from public.instructors where profile_id = :s3;
+reset role;
+
 -- ---------- Annonces + suspension -------------------------------------------
 select tests.login(:admin); set role authenticated;
 insert into public.announcements (title, body, audience, class_id, author_id)

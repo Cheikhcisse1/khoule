@@ -8,7 +8,9 @@ import { Avatar } from './ui';
 import { Logo } from './Logo';
 import { ErrorBoundary } from './ErrorBoundary';
 
-const NAV: Record<Role, { to: string; label: string; icon: string; end?: boolean }[]> = {
+interface NavEntry { to: string; label: string; icon: string; end?: boolean; section?: string }
+
+const NAV: Record<Role, NavEntry[]> = {
   student: [
     { to: '/eleve', label: 'Accueil', icon: '🏠', end: true },
     { to: '/eleve/cours', label: 'Mes cours', icon: '📚' },
@@ -30,14 +32,17 @@ const NAV: Record<Role, { to: string; label: string; icon: string; end?: boolean
   ],
   admin: [
     { to: '/admin', label: 'Tableau de bord', icon: '📊', end: true },
-    { to: '/admin/utilisateurs', label: 'Utilisateurs', icon: '👥' },
-    { to: '/admin/referentiel', label: 'Classes & matières', icon: '🏫' },
+    { to: '/admin/utilisateurs', label: 'Utilisateurs', icon: '👥', section: 'Communauté' },
     { to: '/admin/affectations', label: 'Affectations', icon: '🧑‍🏫' },
-    { to: '/admin/cours', label: 'Cours', icon: '📚' },
     { to: '/admin/annonces', label: 'Annonces', icon: '📢' },
-    { to: '/admin/moderation', label: 'Modération', icon: '🛡️' },
-    { to: '/calendrier', label: 'Calendrier', icon: '📅' },
     { to: '/messages', label: 'Messages', icon: '💬' },
+    { to: '/admin/cours', label: 'Tous les cours', icon: '📚', section: 'Pédagogie' },
+    { to: '/admin/referentiel', label: 'Classes & matières', icon: '🏫' },
+    { to: '/intervenant/corrections', label: 'Corrections & notes', icon: '✅' },
+    { to: '/calendrier', label: 'Calendrier', icon: '📅' },
+    { to: '/questions', label: 'Questions', icon: '❓', section: 'Contrôle' },
+    { to: '/admin/moderation', label: 'Modération', icon: '🛡️' },
+    { to: '/recherche', label: 'Recherche', icon: '🔍' },
   ],
 };
 
@@ -64,10 +69,13 @@ export function Layout() {
         <Link to="/" className="sidebar-brand"><Logo /></Link>
         <nav>
           {items.map((i) => (
-            <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <span className="nav-icon" aria-hidden>{i.icon}</span>
-              {i.label}
-            </NavLink>
+            <div key={i.to}>
+              {i.section && <div className="nav-section">{i.section}</div>}
+              <NavLink to={i.to} end={i.end} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                <span className="nav-icon" aria-hidden>{i.icon}</span>
+                {i.label}
+              </NavLink>
+            </div>
           ))}
         </nav>
         <div className="sidebar-foot">

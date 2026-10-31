@@ -94,7 +94,7 @@ export function CoursePage() {
             {tab === 'sessions' && <SessionsPanel {...panelProps} />}
             {tab === 'questions' && <QuestionsPanel {...panelProps} />}
             {tab === 'discussion' && <DiscussionPanel {...panelProps} />}
-            {tab === 'students' && manage && <StudentsPanel {...panelProps} />}
+            {tab === 'students' && manage && <StudentsPanel {...panelProps} isAdmin={isAdmin} />}
             {tab === 'settings' && manage && <CourseSettingsPanel {...panelProps} isAdmin={isAdmin} onSaved={reload} />}
           </div>
         </>

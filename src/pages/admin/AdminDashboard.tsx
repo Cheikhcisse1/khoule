@@ -38,6 +38,32 @@ export function AdminDashboard() {
         <StatCard icon="❓" label="Questions sans réponse" value={data.questions_open} tone="clay" />
       </div>
 
+      <Card title="Accès rapide">
+        <div className="quick-grid">
+          {[
+            { to: '/admin/utilisateurs', icon: '🧑‍🏫', title: 'Valider les candidatures', hint: 'Intervenants en attente', count: data.pending_instructors },
+            { to: '/admin/utilisateurs', icon: '👥', title: 'Gérer les comptes', hint: 'Modifier, suspendre, rôles' },
+            { to: '/admin/affectations', icon: '🧩', title: 'Affecter les intervenants', hint: 'Classes et matières' },
+            { to: '/admin/cours', icon: '📚', title: 'Tous les cours', hint: 'Créer, publier, archiver' },
+            { to: '/intervenant/corrections', icon: '✅', title: 'Corrections & notes', hint: 'Copies à corriger', count: data.pending_corrections },
+            { to: '/questions', icon: '❓', title: 'Questions des élèves', hint: 'Sans réponse', count: data.questions_open },
+            { to: '/calendrier', icon: '📅', title: 'Calendrier', hint: 'Séances du week-end' },
+            { to: '/admin/annonces', icon: '📢', title: 'Publier une annonce', hint: 'Tous, élèves, une classe…' },
+            { to: '/admin/referentiel', icon: '🏫', title: 'Classes & matières', hint: 'Programme par niveau' },
+            { to: '/admin/moderation', icon: '🛡️', title: 'Modération', hint: 'Questions, réponses, discussions' },
+            { to: '/messages', icon: '💬', title: 'Messagerie', hint: 'Écrire à un membre' },
+            { to: '/recherche', icon: '🔍', title: 'Recherche', hint: 'Cours, matières, intervenants' },
+          ].map((q) => (
+            <Link key={q.title} to={q.to} className="quick">
+              <span className="quick-icon" aria-hidden>{q.icon}</span>
+              <strong>{q.title}</strong>
+              <small>{q.hint}</small>
+              {q.count ? <span className="badge badge-warning">{q.count} en attente</span> : null}
+            </Link>
+          ))}
+        </div>
+      </Card>
+
       <div className="grid-dash">
         <Card title="Élèves par classe"><BarList items={data.students_by_class} /></Card>
         <Card title="Cours publiés par matière"><BarList items={data.courses_by_subject} /></Card>

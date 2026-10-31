@@ -7,8 +7,10 @@ import { COURSE_STATUS, formatDate, fullName } from '../../lib/format';
 import type { Course } from '../../lib/types';
 import { Badge, Button, Card, ConfirmButton, Empty, ErrorBox, Field, Modal, PageHeader, Spinner, useAction } from '../../components/ui';
 import { NewCourseModal } from '../instructor/InstructorCourses';
+import { useAuth } from '../../auth/AuthProvider';
 
 export function AdminCourses() {
+  const { profile: me } = useAuth();
   const { data: ref } = useRefData();
   const [status, setStatus] = useState('');
   const [classId, setClassId] = useState('');
@@ -75,18 +77,23 @@ export function AdminCourses() {
 
       {creating && !instructor && (
         <Modal open onClose={() => setCreating(false)} title="Créer un cours pour un intervenant">
-          {instructorIds.length ? (
-            <Field label="Intervenant (parmi ceux qui ont une affectation)">
-              <select defaultValue="" onChange={(e) => setInstructor(e.target.value)}>
-                <option value="" disabled>Choisir…</option>
-                {instructorIds.map((id) => <InstructorOption key={id} id={id} />)}
-              </select>
-            </Field>
-          ) : <Empty icon="🧩" title="Aucun intervenant affecté"><Link to="/admin/affectations">Créer une affectation</Link></Empty>}
+          <Field label="Responsable du cours" hint="Les intervenants n’apparaissent que s’ils ont une affectation.">
+            <select defaultValue="" onChange={(e) => setInstructor(e.target.value)}>
+              <option value="" disabled>Choisir…</option>
+              <option value={me!.id}>Moi-même (toutes classes et matières)</option>
+              {instructorIds.filter((id) => id !== me!.id).map((id) => <InstructorOption key={id} id={id} />)}
+            </select>
+          </Field>
+          {!instructorIds.length && <Empty icon="🧩" title="Aucun intervenant affecté"><Link to="/admin/affectations">Créer une affectation</Link></Empty>}
         </Modal>
       )}
       {creating && instructor && (
-        <NewCourseModal instructorId={instructor} pairs={data.pairs.filter((p) => p.instructor_id === instructor)}
+        <NewCourseModal instructorId={instructor} pairs={instructor === me!.id
+          ? ref.classSubjects.map((cs) => ({
+              instructor_id: me!.id, class_id: cs.class_id, subject_id: cs.subject_id,
+              class: ref.classes.find((c) => c.id === cs.class_id)!, subject: ref.subjects.find((s) => s.id === cs.subject_id)!,
+            })).sort((a, b) => a.class.sort_order - b.class.sort_order)
+          : data.pairs.filter((p) => p.instructor_id === instructor)}
           onClose={() => { setCreating(false); setInstructor(''); }} />
       )}
     </>

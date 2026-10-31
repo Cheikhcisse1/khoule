@@ -336,15 +336,17 @@ interface ProgressRow {
   lessons_done: number; lessons_total: number; submissions: number; assignments_total: number; average_pct: number | null;
 }
 
-export function StudentsPanel({ course }: PanelProps) {
+export function StudentsPanel({ course, isAdmin }: PanelProps & { isAdmin?: boolean }) {
   const { data, error, loading, reload } = useLoad(async () =>
     must(await supabase.rpc('course_progress', { p_course: course.id })) as ProgressRow[], [course.id]);
   const { run } = useAction();
   if (loading) return <Spinner />;
   if (error || !data) return <ErrorBox error={error ?? ''} onRetry={reload} />;
-  if (!data.length) return <Empty icon="🎒" title="Aucun élève inscrit">Les élèves de la classe peuvent s’inscrire dès que le cours est publié.</Empty>;
+  const enrollForm = isAdmin && <AdminEnroll course={course} enrolled={data.map((s) => s.student_id)} onDone={reload} />;
+  if (!data.length) return <>{enrollForm}<Empty icon="🎒" title="Aucun élève inscrit">Les élèves de la classe peuvent s’inscrire dès que le cours est publié.</Empty></>;
   return (
     <div className="table-wrap">
+      {enrollForm}
       <table className="table">
         <thead><tr><th>Élève</th><th>Leçons</th><th>Devoirs rendus</th><th>Moyenne</th><th /></tr></thead>
         <tbody>
@@ -365,6 +367,43 @@ export function StudentsPanel({ course }: PanelProps) {
         </tbody>
       </table>
     </div>
+  );
+}
+
+/** L'administrateur inscrit directement un élève à un cours. */
+function AdminEnroll({ course, enrolled, onDone }: { course: Course; enrolled: string[]; onDone: () => void }) {
+  const [allClasses, setAllClasses] = useState(false);
+  const [studentId, setStudentId] = useState('');
+  const { busy, run } = useAction();
+  const { data: students } = useLoad(async () => {
+    let q = supabase.from('profiles').select('id, first_name, last_name, student:students!inner(class_id)')
+      .eq('role', 'student').eq('status', 'active').order('last_name');
+    if (!allClasses) q = q.eq('student.class_id', course.class_id);
+    return must(await q) as unknown as { id: string; first_name: string; last_name: string }[];
+  }, [course.class_id, allClasses]);
+  const options = (students ?? []).filter((s) => !enrolled.includes(s.id));
+
+  const enroll = (e: FormEvent) => {
+    e.preventDefault();
+    if (!studentId) return;
+    void run(async () => {
+      must(await supabase.from('enrollments').upsert(
+        { course_id: course.id, student_id: studentId, status: 'active' }, { onConflict: 'course_id,student_id' }));
+      setStudentId('');
+      onDone();
+    }, 'Élève inscrit au cours.');
+  };
+
+  return (
+    <form className="admin-enroll" onSubmit={enroll}>
+      <select value={studentId} onChange={(e) => setStudentId(e.target.value)} aria-label="Élève à inscrire">
+        <option value="">{options.length ? 'Inscrire un élève…' : 'Aucun élève disponible'}</option>
+        {options.map((s) => <option key={s.id} value={s.id}>{fullName(s)}</option>)}
+      </select>
+      <label className="check"><input type="checkbox" checked={allClasses} onChange={(e) => setAllClasses(e.target.checked)} />
+        <span>Toutes les classes</span></label>
+      <Button type="submit" loading={busy} disabled={!studentId}>Inscrire</Button>
+    </form>
   );
 }
 
