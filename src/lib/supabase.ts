@@ -30,5 +30,7 @@ export function translateError(message: string): string {
   if (m.includes('for security purposes')) return 'Pour des raisons de sécurité, patientez une minute avant de réessayer.';
   if (m.includes('unable to validate email') || m.includes('invalid format')) return 'Adresse e-mail invalide.';
   if (m.includes('weak password') || m.includes('password is known')) return 'Mot de passe trop faible : choisissez-en un plus long ou plus original.';
+  if (m.includes('should contain at least one character')) return 'Le mot de passe doit contenir au moins une lettre et un chiffre.';
+  if (m.includes('should be different from the old')) return 'Le nouveau mot de passe doit être différent de l’ancien.';
   return message;
 }

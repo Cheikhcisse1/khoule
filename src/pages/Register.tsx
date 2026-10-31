@@ -4,6 +4,7 @@ import { supabase, translateError } from '../lib/supabase';
 import { useRefData } from '../lib/hooks';
 import { CYCLES, INSTRUCTOR_TYPES } from '../lib/format';
 import { Button, Field } from '../components/ui';
+import { checkPassword } from '../lib/password';
 import { AuthShell } from './AuthShell';
 
 type Kind = 'eleve' | 'intervenant';
@@ -29,7 +30,8 @@ export function Register() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    if ((f.password ?? '').length < 8) return setError('Le mot de passe doit contenir au moins 8 caractères.');
+    const pwError = await checkPassword(f.password ?? '', [f.first_name ?? '', f.last_name ?? '', (f.email ?? '').split('@')[0]]);
+    if (pwError) return setError(pwError);
     if (f.password !== f.password2) return setError('Les deux mots de passe ne correspondent pas.');
     if (kind === 'eleve' && !f.class_id) return setError('Veuillez choisir votre classe.');
     if (isMinor && (!f.guardian_name || !f.guardian_phone))
@@ -158,7 +160,7 @@ export function Register() {
         <div className="grid-2">
           <Field label="Adresse e-mail" required><input type="email" value={f.email ?? ''} onChange={set('email')} required autoComplete="email" /></Field>
           <span />
-          <Field label="Mot de passe" hint="8 caractères minimum" required>
+          <Field label="Mot de passe" hint="8 caractères minimum, avec au moins une lettre et un chiffre" required>
             <input type="password" value={f.password ?? ''} onChange={set('password')} required autoComplete="new-password" minLength={8} />
           </Field>
           <Field label="Confirmer le mot de passe" required>

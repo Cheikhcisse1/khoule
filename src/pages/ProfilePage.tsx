@@ -7,6 +7,7 @@ import { Avatar, Badge, Button, Card, Field, PageHeader, useAction } from '../co
 import { IdentityForm, InstructorProfileForm, StudentProfileForm } from '../components/ProfileForms';
 import { AvailabilityEditor } from '../components/Availability';
 import { MfaSettings } from '../components/Mfa';
+import { checkPassword } from '../lib/password';
 
 export function ProfilePage() {
   const { profile, session } = useAuth();
@@ -26,7 +27,8 @@ export function ProfilePage() {
   const changePassword = (e: FormEvent) => {
     e.preventDefault();
     void run(async () => {
-      if (password.length < 8) throw new Error('8 caractères minimum.');
+      const pwError = await checkPassword(password, [profile.first_name, profile.last_name, session?.user.email?.split('@')[0] ?? '']);
+      if (pwError) throw new Error(pwError);
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw new Error(translateError(error.message));
       setPassword('');

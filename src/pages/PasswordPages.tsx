@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase, translateError } from '../lib/supabase';
 import { Button, Field } from '../components/ui';
+import { checkPassword } from '../lib/password';
 import { AuthShell } from './AuthShell';
 
 export function ForgotPassword() {
@@ -47,7 +48,8 @@ export function ResetPassword() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (password.length < 8) return setError('8 caractères minimum.');
+    const pwError = await checkPassword(password);
+    if (pwError) return setError(pwError);
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password });
     setBusy(false);
