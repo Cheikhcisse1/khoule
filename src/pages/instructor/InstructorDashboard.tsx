@@ -35,7 +35,16 @@ export function InstructorDashboard() {
   return (
     <>
       <PageHeader title={`Bonjour ${profile!.first_name} 👋`} subtitle="Merci de contribuer à la réussite des élèves de Khoulé."
-        actions={<Link to="/intervenant/cours" className="btn btn-primary">+ Nouveau cours</Link>} />
+        actions={<>
+          <Link to="/documents" className="btn btn-secondary">📤 Déposer un document / une annale</Link>
+          <Link to="/intervenant/cours" className="btn btn-primary">+ Nouveau cours</Link>
+        </>} />
+      {data.stats.length === 0 && data.assignments.length > 0 && (
+        <div className="alert alert-info">
+          <span><strong>Pour commencer :</strong> déposez vos annales et fiches dans <Link to="/documents">Documents & annales</Link>,
+            ou créez un cours pour publier leçons, supports, exercices et séances.</span>
+        </div>
+      )}
 
       <div className="stats">
         <StatCard icon="📚" label="Cours" value={data.stats.length} />

@@ -32,6 +32,7 @@ import { AnnouncementsPage } from './pages/AnnouncementsPage';
 import { SearchPage } from './pages/SearchPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { InstructorPublicPage } from './pages/InstructorPublicPage';
+import { LibraryPage } from './pages/LibraryPage';
 import { isConfigured } from './lib/supabase';
 import { SetupNotice } from './pages/SetupNotice';
 
@@ -85,6 +86,7 @@ export default function App() {
         <Route path="/questions/:id" element={<QuestionDetail />} />
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/annonces" element={<AnnouncementsPage />} />
+        <Route path="/documents" element={<LibraryPage />} />
         <Route path="/recherche" element={<SearchPage />} />
         <Route path="/profil" element={<ProfilePage />} />
         <Route path="/intervenants/:id" element={<InstructorPublicPage />} />

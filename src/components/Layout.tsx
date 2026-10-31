@@ -16,6 +16,7 @@ const NAV: Record<Role, NavEntry[]> = {
     { to: '/eleve/cours', label: 'Mes cours', icon: '📚' },
     { to: '/eleve/devoirs', label: 'Devoirs', icon: '📝' },
     { to: '/eleve/notes', label: 'Notes & progression', icon: '📈' },
+    { to: '/documents', label: 'Documents & annales', icon: '📚' },
     { to: '/calendrier', label: 'Calendrier', icon: '📅' },
     { to: '/questions', label: 'Questions', icon: '❓' },
     { to: '/messages', label: 'Messages', icon: '💬' },
@@ -24,6 +25,7 @@ const NAV: Record<Role, NavEntry[]> = {
   instructor: [
     { to: '/intervenant', label: 'Tableau de bord', icon: '🏠', end: true },
     { to: '/intervenant/cours', label: 'Mes cours', icon: '📚' },
+    { to: '/documents', label: 'Documents & annales', icon: '📤' },
     { to: '/intervenant/corrections', label: 'Corrections', icon: '✅' },
     { to: '/calendrier', label: 'Calendrier', icon: '📅' },
     { to: '/questions', label: 'Questions', icon: '❓' },
@@ -37,6 +39,7 @@ const NAV: Record<Role, NavEntry[]> = {
     { to: '/admin/annonces', label: 'Annonces', icon: '📢' },
     { to: '/messages', label: 'Messages', icon: '💬' },
     { to: '/admin/cours', label: 'Tous les cours', icon: '📚', section: 'Pédagogie' },
+    { to: '/documents', label: 'Documents & annales', icon: '📤' },
     { to: '/admin/referentiel', label: 'Classes & matières', icon: '🏫' },
     { to: '/intervenant/corrections', label: 'Corrections & notes', icon: '✅' },
     { to: '/calendrier', label: 'Calendrier', icon: '📅' },

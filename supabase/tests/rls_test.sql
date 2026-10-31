@@ -246,6 +246,38 @@ do $$ begin
 end $$;
 reset role;
 
+-- ---------- Bibliothèque « Documents & annales » ----------------------------
+select tests.login(:prof); set role authenticated;
+insert into public.library_documents (title, kind, class_id, subject_id, year, file_path, uploaded_by)
+values ('BFEM 2024 Maths', 'annale', (select id from public.classes where code = '6E'),
+        (select id from public.subjects where name = 'Mathématiques'), 2024,
+        format('%s/%s/bfem.pdf', (select id from public.classes where code = '6E'), (select id from public.subjects where name = 'Mathématiques')), :prof);
+insert into storage.objects (bucket_id, name)
+values ('library', format('%s/%s/bfem.pdf', (select id from public.classes where code = '6E'), (select id from public.subjects where name = 'Mathématiques')));
+select tests.should_fail(format($q$insert into public.library_documents (title, class_id, subject_id, url, uploaded_by)
+  values ('Hors affectation', (select id from public.classes where code='TLE'), (select id from public.subjects where name='Mathématiques'),
+          'https://exemple.sn', %L)$q$, :prof));
+select tests.should_fail(format($q$insert into storage.objects (bucket_id, name) values ('library', '%s/%s/x.pdf')$q$,
+  (select id from public.classes where code = 'TLE'), (select id from public.subjects where name = 'Mathématiques')));
+select tests.should_fail($q$insert into storage.objects (bucket_id, name) values ('library', 'abc/def/x.pdf')$q$);
+reset role;
+select tests.login(:s1); set role authenticated;
+do $$ begin
+  assert (select count(*) from public.library_documents) = 1, 'T40 : l''élève de 6e voit l''annale';
+  assert (select count(*) from storage.objects where bucket_id = 'library') = 1, 'T41 : l''élève de 6e peut télécharger';
+  assert (select count(*) from public.notifications where type = 'new_document') = 1, 'T42 : notif nouveau document';
+end $$;
+select tests.should_fail(format($q$insert into public.library_documents (title, class_id, subject_id, url, uploaded_by)
+  values ('Élève', 1, 1, 'https://x.sn', %L)$q$, :s1));
+reset role;
+select tests.login(:s3); set role authenticated;
+do $$ begin
+  assert (select count(*) from public.library_documents) = 0, 'T43 : invisible pour une autre classe';
+  assert (select count(*) from storage.objects where bucket_id = 'library') = 0, 'T44 : fichier invisible pour une autre classe';
+  raise notice 'OK  bibliothèque : dépôt selon affectation, lecture par classe, notification';
+end $$;
+reset role;
+
 -- ---------- Disponibilités des intervenants ---------------------------------
 select tests.login(:prof); set role authenticated;
 insert into public.instructor_availabilities (instructor_id, day_of_week, start_time, end_time, mode)

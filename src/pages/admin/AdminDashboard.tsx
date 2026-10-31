@@ -45,6 +45,7 @@ export function AdminDashboard() {
             { to: '/admin/utilisateurs', icon: '👥', title: 'Gérer les comptes', hint: 'Modifier, suspendre, rôles' },
             { to: '/admin/affectations', icon: '🧩', title: 'Affecter les intervenants', hint: 'Classes et matières' },
             { to: '/admin/cours', icon: '📚', title: 'Tous les cours', hint: 'Créer, publier, archiver' },
+            { to: '/documents', icon: '📤', title: 'Documents & annales', hint: 'Déposer, consulter, supprimer' },
             { to: '/intervenant/corrections', icon: '✅', title: 'Corrections & notes', hint: 'Copies à corriger', count: data.pending_corrections },
             { to: '/questions', icon: '❓', title: 'Questions des élèves', hint: 'Sans réponse', count: data.questions_open },
             { to: '/calendrier', icon: '📅', title: 'Calendrier', hint: 'Séances de la semaine' },

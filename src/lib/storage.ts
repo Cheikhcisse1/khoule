@@ -1,12 +1,13 @@
 import { supabase } from './supabase';
 
-export type Bucket = 'course-materials' | 'submissions' | 'corrections' | 'avatars';
+export type Bucket = 'course-materials' | 'submissions' | 'corrections' | 'avatars' | 'library';
 
 export const MAX_SIZE: Record<Bucket, number> = {
   'course-materials': 50 * 1024 * 1024,
   submissions: 20 * 1024 * 1024,
   corrections: 20 * 1024 * 1024,
   avatars: 2 * 1024 * 1024,
+  library: 50 * 1024 * 1024,
 };
 
 function safeName(name: string): string {
