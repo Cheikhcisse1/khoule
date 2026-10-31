@@ -37,6 +37,10 @@ docs/ARCHITECTURE.md
 
 ## État du déploiement (31/10/2026)
 
+- **Site en ligne** : https://cheikhcisse1.github.io/khoule-education/ — redéployé automatiquement
+  (GitHub Actions) à chaque `git push` sur `main`. Les variables `VITE_SUPABASE_URL` et
+  `VITE_SUPABASE_ANON_KEY` sont des *variables* du dépôt (Settings → Secrets and variables → Actions).
+
 - Projet Supabase **khoule-education** (`shgtnhypsernnsiwitqa`, région Paris) : 6 migrations appliquées,
   référentiel chargé, Edge Function `admin-delete-user` déployée. `.env.local` est déjà rempli.
 - Trois comptes de test (admin, intervenant, élève) : identifiants dans `supabase/tests/comptes-de-test.local.md`
