@@ -43,8 +43,6 @@ docs/ARCHITECTURE.md
 
 - Projet Supabase **khoule-education** (`shgtnhypsernnsiwitqa`, région Paris) : 6 migrations appliquées,
   référentiel chargé, Edge Function `admin-delete-user` déployée. `.env.local` est déjà rempli.
-- Trois comptes de test (admin, intervenant, élève) : identifiants dans `supabase/tests/comptes-de-test.local.md`
-  (fichier ignoré par git). **À supprimer avant l'ouverture au public.**
 - Parcours vérifié de bout en bout : validation et affectation d'un intervenant, création et publication d'un cours,
   leçon, support PDF, devoir, séance avec lien Jitsi, inscription d'un élève, dépôt de copie avec fichier,
   correction et note, question/réponse, discussion, notifications, progression.
