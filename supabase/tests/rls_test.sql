@@ -47,14 +47,37 @@ do $$ begin
          'T2 : intervenant en attente';
   assert (select guardian_consent and consent_at is not null from public.students
           where profile_id = 'cccccccc-0000-0000-0000-000000000001'), 'T3 : consentement horodaté';
-  raise notice 'OK  inscription : rôles, statuts et consentement';
+  assert (select status from public.profiles where id = 'cccccccc-0000-0000-0000-000000000001') = 'pending',
+         'T3b : un nouvel élève attend la validation';
+  raise notice 'OK  inscription : rôles, statuts (élèves en attente) et consentement';
 end $$;
 
+-- Un élève en attente n'accède à rien
+select tests.login(:s1); set role authenticated;
+do $$ begin
+  assert public.auth_role() is null, 'T3c : élève en attente sans droits';
+  assert (select count(*) from public.classes) > 0, 'T3d : le référentiel reste lisible';
+end $$;
+reset role;
+
 -- Promotion de l'admin (opération manuelle documentée dans le README)
-update public.profiles set role = 'admin' where id = :admin;
+select tests.login(null);
+update public.profiles set role = 'admin', status = 'active' where id = :admin;
 do $$ begin
   assert (select count(*) from public.notifications n
           where n.type = 'instructor_application') = 0, 'pas d''admin au moment des candidatures';
+end $$;
+
+-- L'admin valide les élèves ; ils sont notifiés
+select tests.login(:admin); set role authenticated;
+do $$ begin
+  assert public.pending_students_count() = 3, 'T3e : 3 élèves en attente';
+end $$;
+update public.profiles set status = 'active' where role = 'student';
+reset role;
+do $$ begin
+  assert (select count(*) from public.notifications where type = 'account_validated') = 3, 'T3f : élèves notifiés de la validation';
+  raise notice 'OK  validation des comptes élèves par l''administration';
 end $$;
 
 -- ---------- Élève : ne peut pas changer son rôle -------------------------------
@@ -355,6 +378,26 @@ end $$;
 delete from public.enrollments where student_id = :s2;
 delete from public.instructors where profile_id = :s3;
 reset role;
+
+-- ---------- Vérification en deux étapes de l'administrateur -----------------
+insert into auth.mfa_factors (user_id, status) values (:admin, 'verified');
+select tests.login(:admin);
+select set_config('request.jwt.claims', '{"aal":"aal1"}', false);
+set role authenticated;
+do $$ begin
+  assert not public.is_admin(), 'T50 : admin avec 2FA mais sans code = pas de droits';
+  assert (select count(*) from public.students where profile_id <> auth.uid()) = 0, 'T51 : aucune donnée élève sans le code 2FA';
+end $$;
+reset role;
+select set_config('request.jwt.claims', '{"aal":"aal2"}', false);
+set role authenticated;
+do $$ begin
+  assert public.is_admin(), 'T52 : admin avec code 2FA = droits complets';
+  raise notice 'OK  2FA : droits admin seulement après le code de vérification';
+end $$;
+reset role;
+select set_config('request.jwt.claims', '', false);
+delete from auth.mfa_factors;
 
 -- ---------- Annonces + suspension -------------------------------------------
 select tests.login(:admin); set role authenticated;

@@ -57,7 +57,7 @@ export function Register() {
     });
     setBusy(false);
     if (error) return setError(translateError(error.message));
-    if (res.session) navigate(kind === 'eleve' ? '/eleve' : '/candidature', { replace: true });
+    if (res.session) navigate(kind === 'eleve' ? '/en-attente' : '/candidature', { replace: true });
     else setDone(true);
   };
 

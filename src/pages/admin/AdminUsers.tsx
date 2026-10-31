@@ -48,7 +48,8 @@ export function AdminUsers() {
   const match = (u: UserRow) => fullName(u).toLowerCase().includes(q.toLowerCase());
   const lists: Record<Tab, UserRow[]> = {
     applications: data.users.filter((u) => u.role === 'instructor' && u.instructor?.application_status !== 'approved'),
-    students: data.users.filter((u) => u.role === 'student' && (!classFilter || String(u.student?.class_id) === classFilter)),
+    students: data.users.filter((u) => u.role === 'student' && (!classFilter || String(u.student?.class_id) === classFilter))
+      .sort((a, b) => Number(b.status === 'pending') - Number(a.status === 'pending')),
     instructors: data.users.filter((u) => u.role === 'instructor' && u.instructor?.application_status === 'approved'),
     admins: data.users.filter((u) => u.role === 'admin'),
   };
@@ -63,6 +64,8 @@ export function AdminUsers() {
     must(await supabase.rpc('review_instructor', { p_instructor: u.id, p_decision: decision, p_reason: reason ?? null }));
     await reload();
   }, decision === 'approved' ? `${u.first_name} est maintenant intervenant. Pensez à l’affecter.` : 'Candidature refusée.');
+
+  const pendingStudents = data.users.filter((u) => u.role === 'student' && u.status === 'pending').length;
 
   const setStatus = (u: UserRow, status: 'active' | 'suspended') => run(async () => {
     must(await supabase.from('profiles').update({ status }).eq('id', u.id)); await reload();
@@ -81,7 +84,7 @@ export function AdminUsers() {
       <PageHeader title="Utilisateurs" subtitle="Validez les intervenants, gérez les comptes et protégez les données des élèves." />
       <Tabs value={tab} onChange={setTab} tabs={[
         { id: 'applications', label: 'Candidatures', count: lists.applications.filter((u) => u.instructor?.application_status === 'pending').length },
-        { id: 'students', label: 'Élèves', count: lists.students.length },
+        { id: 'students', label: pendingStudents ? `Élèves (${pendingStudents} à valider)` : 'Élèves', count: lists.students.length },
         { id: 'instructors', label: 'Intervenants', count: lists.instructors.length },
         { id: 'admins', label: 'Administrateurs' },
       ]} />
@@ -139,6 +142,11 @@ export function AdminUsers() {
                   <td className="small">{formatDate(u.created_at)}</td>
                   <td className="row">
                     {tab === 'instructors' && <Link className="btn btn-ghost" to={`/admin/affectations?intervenant=${u.id}`}>Affecter</Link>}
+                    {u.role === 'student' && u.status === 'pending' && (
+                      <Button onClick={() => void run(async () => {
+                        must(await supabase.from('profiles').update({ status: 'active' }).eq('id', u.id)); await reload();
+                      }, `${u.first_name} peut maintenant accéder aux cours.`)}>✓ Valider</Button>
+                    )}
                     <Button variant="secondary" onClick={() => setDetail(u)}>✏️ Modifier</Button>
                     {u.id !== me?.id && <>
                       <Link className="btn btn-ghost" to={`/messages?avec=${u.id}`}>💬</Link>

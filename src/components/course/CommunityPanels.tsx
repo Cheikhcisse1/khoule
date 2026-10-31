@@ -10,17 +10,12 @@ import type { PanelProps } from './ContentPanels';
 import {
   WEEK_ORDER, availabilitySummary, fetchAvailabilities, fitsAvailability, type Availability,
 } from '../Availability';
-import { endLiveSession, isLive } from '../LiveNow';
+import { endLiveSession, isLive, jitsiRoom } from '../LiveNow';
 
 // ---------------------------------------------------------------------------
 // Séances et créneaux (toute la semaine, selon les disponibilités)
 // ---------------------------------------------------------------------------
 const DAKAR_OFFSET = 'Z'; // Africa/Dakar = UTC+0 toute l'année
-
-function jitsiLink(course: Course) {
-  const slug = course.title.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]+/g, '');
-  return `https://meet.jit.si/KhouleEducation-${slug}-${Math.random().toString(36).slice(2, 8)}`;
-}
 
 export function SessionsPanel({ course, manage }: PanelProps) {
   const { data, error, loading, reload } = useLoad(async () => {
@@ -240,7 +235,7 @@ function SessionModal({ course, session, availabilities, onClose, onSaved }:
         <Field label="Lien du cours en direct" hint="Jitsi, Google Meet, Zoom… (https://)">
           <div className="input-group">
             <input type="url" pattern="https://.*" value={f.live_url} onChange={(e) => setF({ ...f, live_url: e.target.value })} />
-            <Button type="button" variant="secondary" onClick={() => setF({ ...f, live_url: jitsiLink(course) })}>Créer un lien Jitsi</Button>
+            <Button type="button" variant="secondary" onClick={() => setF({ ...f, live_url: jitsiRoom() })}>Créer un lien Jitsi</Button>
           </div>
         </Field>
         <Field label="Remarques"><textarea rows={2} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} /></Field>

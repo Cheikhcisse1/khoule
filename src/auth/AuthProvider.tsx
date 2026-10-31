@@ -9,6 +9,8 @@ interface AuthState {
   student: Student | null;
   instructor: Instructor | null;
   loading: boolean;
+  /** Vérification en deux étapes activée mais code pas encore saisi pour cette session */
+  mfaRequired: boolean;
   refresh: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -20,6 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [student, setStudent] = useState<Student | null>(null);
   const [instructor, setInstructor] = useState<Instructor | null>(null);
+  const [mfaRequired, setMfaRequired] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const loadProfile = useCallback(async (s: Session | null) => {
@@ -27,8 +30,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null);
       setStudent(null);
       setInstructor(null);
+      setMfaRequired(false);
       return;
     }
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    setMfaRequired(Boolean(aal && aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2'));
     const uid = s.user.id;
     const { data: p } = await supabase.from('profiles').select('*').eq('id', uid).maybeSingle();
     setProfile(p as Profile | null);
@@ -56,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+      if (['SIGNED_IN', 'SIGNED_OUT', 'USER_UPDATED', 'MFA_CHALLENGE_VERIFIED'].includes(event)) {
         // différé pour ne pas bloquer le callback d'auth (recommandation supabase-js)
         setTimeout(() => {
           void loadProfile(s).finally(() => setLoading(false));
@@ -78,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadProfile]);
 
   return (
-    <AuthContext.Provider value={{ session, profile, student, instructor, loading, refresh, signOut }}>
+    <AuthContext.Provider value={{ session, profile, student, instructor, loading, mfaRequired, refresh, signOut }}>
       {children}
     </AuthContext.Provider>
   );
@@ -96,5 +102,5 @@ export function homeFor(profile: Profile | null): string {
   if (profile.status === 'suspended') return '/compte-suspendu';
   if (profile.role === 'admin') return '/admin';
   if (profile.role === 'instructor') return profile.status === 'active' ? '/intervenant' : '/candidature';
-  return '/eleve';
+  return profile.status === 'active' ? '/eleve' : '/en-attente';
 }

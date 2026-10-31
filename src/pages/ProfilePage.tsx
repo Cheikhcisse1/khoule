@@ -6,6 +6,7 @@ import { ROLE_LABEL, formatDate } from '../lib/format';
 import { Avatar, Badge, Button, Card, Field, PageHeader, useAction } from '../components/ui';
 import { IdentityForm, InstructorProfileForm, StudentProfileForm } from '../components/ProfileForms';
 import { AvailabilityEditor } from '../components/Availability';
+import { MfaSettings } from '../components/Mfa';
 
 export function ProfilePage() {
   const { profile, session } = useAuth();
@@ -56,6 +57,9 @@ export function ProfilePage() {
             <AvailabilityEditor instructorId={profile.id} />
           </Card>
         </section>
+      )}
+      {(profile.role === 'admin' || profile.role === 'instructor') && (
+        <Card title="🔐 Vérification en deux étapes"><MfaSettings /></Card>
       )}
       <Card title="Sécurité">
         <form className="form" onSubmit={changePassword}>

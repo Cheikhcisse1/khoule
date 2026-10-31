@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { must, supabase } from '../../lib/supabase';
 import { useLoad } from '../../lib/hooks';
-import { BarList, Card, ErrorBox, PageHeader, Spinner, StatCard } from '../../components/ui';
+import { BarList, Button, Card, ErrorBox, PageHeader, Spinner, StatCard, useAction } from '../../components/ui';
 
 interface Stats {
   students: number; instructors: number; pending_instructors: number; suspended: number;
@@ -12,15 +12,60 @@ interface Stats {
   weekly_activity: { week: string; submissions: number; enrollments: number }[];
 }
 
+// Tables exportées dans la sauvegarde (l'administrateur les lit toutes grâce à la RLS)
+const BACKUP_TABLES = [
+  'profiles', 'students', 'instructors', 'instructor_contacts', 'instructor_availabilities', 'classes', 'subjects',
+  'class_subjects', 'teaching_assignments', 'courses', 'schedules', 'course_sessions', 'enrollments', 'lessons',
+  'course_materials', 'lesson_progress', 'exercises', 'assignments', 'submissions', 'corrections', 'grades',
+  'questions', 'answers', 'messages', 'announcements', 'library_documents',
+];
+
+/** Télécharge toutes les données de la plateforme dans un fichier JSON daté. */
+async function downloadBackup() {
+  const backup: Record<string, unknown[]> = {};
+  for (const table of BACKUP_TABLES) {
+    const rows: unknown[] = [];
+    for (let from = 0; ; from += 1000) {
+      const page = must(await supabase.from(table).select('*').range(from, from + 999)) as unknown[];
+      rows.push(...page);
+      if (page.length < 1000) break;
+    }
+    backup[table] = rows;
+  }
+  const blob = new Blob([JSON.stringify({ exported_at: new Date().toISOString(), tables: backup }, null, 1)],
+    { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `sauvegarde-khoule-education-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
 export function AdminDashboard() {
-  const { data, error, loading, reload } = useLoad(async () => must(await supabase.rpc('admin_stats')) as Stats, []);
+  const { data, error, loading, reload } = useLoad(async () => {
+    const [stats, pendingStudents] = await Promise.all([
+      supabase.rpc('admin_stats').then(must),
+      supabase.rpc('pending_students_count').then(must),
+    ]);
+    return { ...(stats as Stats), pending_students: Number(pendingStudents) };
+  }, []);
+  const { busy, run } = useAction();
   if (loading) return <Spinner />;
   if (error || !data) return <ErrorBox error={error ?? ''} onRetry={reload} />;
   const maxWeek = Math.max(1, ...data.weekly_activity.map((w) => Math.max(w.submissions, w.enrollments)));
 
   return (
     <>
-      <PageHeader title="Tableau de bord" subtitle="Vue d’ensemble de la plateforme Khoulé Éducation." />
+      <PageHeader title="Tableau de bord" subtitle="Vue d’ensemble de la plateforme Khoulé Éducation."
+        actions={<Button variant="secondary" loading={busy} onClick={() => void run(downloadBackup,
+          'Sauvegarde téléchargée. Conservez ce fichier en lieu sûr : il contient des données personnelles.')}>
+          💾 Télécharger une sauvegarde</Button>} />
+      {data.pending_students > 0 && (
+        <div className="alert alert-info">
+          <span>🎒 <strong>{data.pending_students}</strong> compte(s) élève en attente de validation.</span>
+          <Link to="/admin/utilisateurs" className="btn btn-primary">Valider</Link>
+        </div>
+      )}
       {data.pending_instructors > 0 && (
         <div className="alert alert-info">
           <span>🧑‍🏫 <strong>{data.pending_instructors}</strong> candidature(s) d’intervenant en attente.</span>

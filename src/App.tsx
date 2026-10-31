@@ -9,6 +9,8 @@ import { Register } from './pages/Register';
 import { ForgotPassword, ResetPassword } from './pages/PasswordPages';
 import { Suspended } from './pages/Suspended';
 import { Application } from './pages/instructor/Application';
+import { PendingStudent } from './pages/student/PendingStudent';
+import { MfaChallenge } from './components/Mfa';
 import { StudentDashboard } from './pages/student/StudentDashboard';
 import { StudentCourses } from './pages/student/StudentCourses';
 import { StudentAssignments } from './pages/student/StudentAssignments';
@@ -44,7 +46,10 @@ function Home() {
 }
 
 export default function App() {
+  const { session, mfaRequired } = useAuth();
   if (!isConfigured) return <SetupNotice />;
+  // Vérification en deux étapes activée : le code est demandé avant tout accès
+  if (session && mfaRequired) return <MfaChallenge />;
 
   return (
     <Routes>
@@ -54,6 +59,9 @@ export default function App() {
       <Route path="/mot-de-passe-oublie" element={<ForgotPassword />} />
       <Route path="/nouveau-mot-de-passe" element={<ResetPassword />} />
       <Route path="/compte-suspendu" element={<Suspended />} />
+      <Route path="/en-attente" element={
+        <RequireRole roles={['student']} allowPending><PendingStudent /></RequireRole>
+      } />
       <Route path="/candidature" element={
         <RequireRole roles={['instructor']} allowPending><Application /></RequireRole>
       } />

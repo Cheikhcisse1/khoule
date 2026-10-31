@@ -42,3 +42,15 @@ create function storage.foldername(name text) returns text[] language sql immuta
   select (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1) - 1]
 $$;
 grant execute on function storage.foldername(text) to anon, authenticated;
+
+-- Jeton JWT (claims) et facteurs de vérification en deux étapes, comme sur Supabase
+create function auth.jwt() returns jsonb language sql stable as $$
+  select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb
+$$;
+grant execute on function auth.jwt() to anon, authenticated;
+create table auth.mfa_factors (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users (id) on delete cascade,
+  factor_type text default 'totp',
+  status text default 'unverified'
+);

@@ -4,10 +4,15 @@ import { must, supabase } from '../lib/supabase';
 import { useLoad, useRefData } from '../lib/hooks';
 import { Button, Field, Modal, Spinner, useAction } from './ui';
 
-/** Salle Jitsi unique et lisible pour un cours. */
-export function jitsiRoom(title: string): string {
-  const slug = title.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]+/g, '');
-  return `https://meet.jit.si/KhouleEducation-${slug.slice(0, 40)}-${Math.random().toString(36).slice(2, 8)}`;
+/**
+ * Salle Jitsi impossible à deviner (identifiant aléatoire de 20 caractères), avec écran d'accueil
+ * avant d'entrer : le nom du cours n'apparaît pas dans le lien.
+ */
+export function jitsiRoom(_title?: string): string {
+  const bytes = new Uint8Array(15);
+  crypto.getRandomValues(bytes);
+  const id = Array.from(bytes, (b) => 'abcdefghijkmnpqrstuvwxyz23456789'[b % 32]).join('');
+  return `https://meet.jit.si/Khoule-${id}#config.prejoinConfig.enabled=true`;
 }
 
 interface LiveSession { id: string; title: string; starts_at: string; ends_at: string; live_url: string | null; course?: { id: string; title: string } }
@@ -201,8 +206,11 @@ function LiveNowModal({ courseId, onClose, onStarted }: { courseId?: string; onC
           </Field>
         )}
         {f.provider === 'jitsi' && (
-          <p className="small muted">Une salle est créée automatiquement. Sur Jitsi, la première personne qui entre (vous) doit se connecter
-            avec Google, GitHub ou Facebook pour ouvrir la salle ; les élèves entrent ensuite sans compte.</p>
+          <div className="warn-box small">
+            Une salle privée est créée automatiquement. <b>Entrez en premier</b> (connexion Google, GitHub ou Facebook
+            demandée par Jitsi), puis <b>activez la salle d’attente</b> : menu <b>⋯</b> → <b>Options de sécurité</b> →
+            <b> Salle d’attente</b>. Vous admettrez ainsi chaque élève vous-même. Ne partagez pas le lien hors de la plateforme.
+          </div>
         )}
         <Field label="Salle physique" hint="Facultatif, si le cours a aussi lieu en présentiel">
           <input value={f.room} onChange={(e) => setF({ ...f, room: e.target.value })} />

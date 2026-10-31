@@ -22,7 +22,12 @@ export async function uploadFile(bucket: Bucket, folder: string, file: File): Pr
   }
   const path = `${folder}/${safeName(file.name)}`;
   const { error } = await supabase.storage.from(bucket).upload(path, file, { upsert: false, contentType: file.type });
-  if (error) throw new Error(`Échec de l'envoi : ${error.message}`);
+  if (error) {
+    if (/mime|content type|not supported/i.test(error.message)) {
+      throw new Error(`Type de fichier non autorisé (${file.name}). Formats acceptés : PDF, images, Word, PowerPoint, Excel, texte, vidéos MP4.`);
+    }
+    throw new Error(`Échec de l'envoi : ${error.message}`);
+  }
   return path;
 }
 
