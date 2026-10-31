@@ -1,6 +1,6 @@
 # Khoulé Éducation
 
-Plateforme éducative communautaire de soutien scolaire du week-end pour les élèves de Khoulé (Sénégal),
+Plateforme éducative communautaire de soutien scolaire, toute la semaine selon les disponibilités des intervenants, pour les élèves de Khoulé (Sénégal),
 de la CI à la Terminale. Les cours sont animés par des enseignants, professeurs, étudiants et autres
 intervenants originaires de Khoulé.
 
@@ -15,7 +15,7 @@ intervenants originaires de Khoulé.
 | Profil | Fonctionnalités |
 |---|---|
 | **Élève** | Inscription (classe, établissement, parent/tuteur + consentement) · catalogue des cours de sa classe · inscription aux cours · leçons (texte, vidéo) et suivi « leçon terminée » · supports téléchargeables · exercices · dépôt de devoirs (texte, PDF, photos, documents) · corrections et notes · progression et historique · questions aux intervenants · discussion de cours · messages privés aux intervenants · calendrier · notifications temps réel · annonces |
-| **Intervenant** | Candidature + profil (niveau d'études, spécialité, expérience, matières et classes souhaitées) · création/publication de cours sur ses affectations · leçons, supports (PDF, images, vidéos, liens) · exercices/évaluations, devoirs avec date limite · séances datées (salle, lien visio, bouton « Créer un lien Jitsi ») et créneaux récurrents du week-end avec génération automatique des séances · correction et notation · réponses aux questions et modération de ses cours · suivi de la progression de chaque élève · statistiques de ses cours · messagerie |
+| **Intervenant** | Candidature + profil (niveau d'études, spécialité, expérience, matières et classes souhaitées) · création/publication de cours sur ses affectations · leçons, supports (PDF, images, vidéos, liens) · exercices/évaluations, devoirs avec date limite · séances datées (salle, lien visio, bouton « Créer un lien Jitsi ») et créneaux récurrents sur toute la semaine (selon ses disponibilités déclarées) avec génération automatique des séances · correction et notation · réponses aux questions et modération de ses cours · suivi de la progression de chaque élève · statistiques de ses cours · messagerie |
 | **Administrateur** | Tableau de bord statistique · validation/refus des candidatures · gestion des comptes (suspension, réactivation, suppression, promotion admin), fiches élèves avec tuteur · classes, matières et programme par niveau · affectation des intervenants · gestion de tous les cours · annonces ciblées (tous, élèves, intervenants, une classe) · modération (questions, réponses, discussions) |
 | **Tous** | Recherche globale (cours, matières, intervenants) · calendrier mensuel · notifications · profil, mot de passe |
 

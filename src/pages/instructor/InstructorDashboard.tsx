@@ -6,6 +6,7 @@ import { fetchUpcomingSessions } from '../../lib/queries';
 import { COURSE_STATUS } from '../../lib/format';
 import { Badge, Card, Empty, ErrorBox, PageHeader, Spinner, StatCard } from '../../components/ui';
 import { SessionItem } from '../../components/CourseBits';
+import { AvailabilityList, fetchAvailabilities } from '../../components/Availability';
 
 export interface CourseStat {
   course_id: string; title: string; class_code: string; subject: string; status: string;
@@ -18,11 +19,13 @@ export function InstructorDashboard() {
   const { data, error, loading, reload } = useLoad(async () => {
     const stats = must(await supabase.rpc('instructor_course_stats')) as CourseStat[];
     const mine = stats.map((s) => s.course_id);
-    const [sessions, assignments] = await Promise.all([
+    const [sessions, assignments, availabilities] = await Promise.all([
       fetchUpcomingSessions(mine, 5),
       supabase.from('teaching_assignments').select('class:classes(code), subject:subjects(name)').eq('instructor_id', uid).then(must),
+      fetchAvailabilities(uid),
     ]);
-    return { stats, sessions, assignments: assignments as unknown as { class: { code: string }; subject: { name: string } }[] };
+    return { stats, sessions, availabilities,
+      assignments: assignments as unknown as { class: { code: string }; subject: { name: string } }[] };
   }, [uid]);
 
   if (loading) return <Spinner />;
@@ -73,6 +76,12 @@ export function InstructorDashboard() {
           {data.assignments.length ? (
             <div className="chips">{data.assignments.map((a, i) => <span key={i} className="chip on">{a.class.code} · {a.subject.name}</span>)}</div>
           ) : <p className="muted">L’administration ne vous a pas encore affecté de classe. Vous serez notifié.</p>}
+        </Card>
+
+        <Card title="📆 Mes disponibilités" actions={<Link to="/profil#disponibilites">Modifier →</Link>}>
+          {data.availabilities.length ? <AvailabilityList slots={data.availabilities} />
+            : <p className="muted">Indiquez vos créneaux libres dans la semaine pour que l’administration puisse planifier vos cours.
+              <br /><Link to="/profil#disponibilites">Ajouter mes disponibilités</Link></p>}
         </Card>
       </div>
     </>

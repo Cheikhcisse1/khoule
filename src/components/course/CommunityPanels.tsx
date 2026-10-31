@@ -7,9 +7,12 @@ import type { Course, CourseSession, Message, Question, Schedule } from '../../l
 import { Avatar, Badge, Button, ConfirmButton, Empty, ErrorBox, Field, Modal, Progress, Spinner, useAction } from '../ui';
 import { ScheduleLine, SessionItem } from '../CourseBits';
 import type { PanelProps } from './ContentPanels';
+import {
+  WEEK_ORDER, availabilitySummary, fetchAvailabilities, fitsAvailability, type Availability,
+} from '../Availability';
 
 // ---------------------------------------------------------------------------
-// Séances et créneaux du week-end
+// Séances et créneaux (toute la semaine, selon les disponibilités)
 // ---------------------------------------------------------------------------
 const DAKAR_OFFSET = 'Z'; // Africa/Dakar = UTC+0 toute l'année
 
@@ -20,11 +23,12 @@ function jitsiLink(course: Course) {
 
 export function SessionsPanel({ course, manage }: PanelProps) {
   const { data, error, loading, reload } = useLoad(async () => {
-    const [sessions, schedules] = await Promise.all([
+    const [sessions, schedules, availabilities] = await Promise.all([
       supabase.from('course_sessions').select('*').eq('course_id', course.id).order('starts_at').then(must),
       supabase.from('schedules').select('*').eq('course_id', course.id).order('day_of_week').then(must),
+      manage ? fetchAvailabilities(course.instructor_id) : Promise.resolve([] as Availability[]),
     ]);
-    return { sessions: sessions as CourseSession[], schedules: schedules as Schedule[] };
+    return { sessions: sessions as CourseSession[], schedules: schedules as Schedule[], availabilities };
   }, [course.id]);
   const [editing, setEditing] = useState<Partial<CourseSession> | null>(null);
   const [slot, setSlot] = useState<Partial<Schedule> | null>(null);
@@ -57,8 +61,29 @@ export function SessionsPanel({ course, manage }: PanelProps) {
     await reload();
   }, 'Séances des 4 prochaines semaines programmées.');
 
+  const avail = data.availabilities;
+  const firstSlot = WEEK_ORDER.flatMap((d) => avail.filter((a) => a.day_of_week === d))[0];
+
+  const saveSlot = (e: FormEvent) => {
+    e.preventDefault();
+    if (!slot) return;
+    if (avail.length && !fitsAvailability(avail, slot.day_of_week!, slot.start_time!, slot.end_time!)
+      && !window.confirm('Ce créneau est en dehors des disponibilités déclarées par l’intervenant. Continuer quand même ?')) return;
+    void run(async () => {
+      must(await supabase.from('schedules').insert({ course_id: course.id, day_of_week: slot.day_of_week,
+        start_time: slot.start_time, end_time: slot.end_time, room: slot.room || null }));
+      setSlot(null); await reload();
+    }, 'Créneau ajouté.');
+  };
+
   return (
     <div className="stack">
+      {manage && (
+        <div className="warn-box">
+          <strong>📆 Disponibilités de l’intervenant : </strong>
+          {avail.length ? availabilitySummary(avail) : <>non renseignées. <Link to="/profil#disponibilites">Les ajouter</Link> (intervenant).</>}
+        </div>
+      )}
       <div className="split">
         <section>
           <h3 className="section-title">Créneaux habituels</h3>
@@ -76,7 +101,9 @@ export function SessionsPanel({ course, manage }: PanelProps) {
           ) : <p className="muted">Aucun créneau récurrent.</p>}
           {manage && (
             <div className="row">
-              <Button variant="secondary" onClick={() => setSlot({ day_of_week: 6, start_time: '09:00', end_time: '11:00' })}>+ Créneau</Button>
+              <Button variant="secondary" onClick={() => setSlot(firstSlot
+                ? { day_of_week: firstSlot.day_of_week, start_time: firstSlot.start_time.slice(0, 5), end_time: firstSlot.end_time.slice(0, 5) }
+                : { day_of_week: 1, start_time: '17:00', end_time: '19:00' })}>+ Créneau</Button>
               {data.schedules.length > 0 && <Button variant="ghost" loading={busy} onClick={() => void generate()}>⚡ Générer les séances (4 semaines)</Button>}
             </div>
           )}
@@ -111,23 +138,30 @@ export function SessionsPanel({ course, manage }: PanelProps) {
         </details>
       )}
 
-      {editing && <SessionModal course={course} session={editing} onClose={() => setEditing(null)} onSaved={reload} />}
+      {editing && <SessionModal course={course} session={editing} availabilities={avail} onClose={() => setEditing(null)} onSaved={reload} />}
       {slot && (
         <Modal open onClose={() => setSlot(null)} title="Nouveau créneau récurrent">
-          <form className="form" onSubmit={(e) => {
-            e.preventDefault();
-            void run(async () => {
-              must(await supabase.from('schedules').insert({ course_id: course.id, day_of_week: slot.day_of_week,
-                start_time: slot.start_time, end_time: slot.end_time, room: slot.room || null }));
-              setSlot(null); await reload();
-            }, 'Créneau ajouté.');
-          }}>
+          <form className="form" onSubmit={saveSlot}>
+            {avail.length > 0 && (
+              <div className="small"><strong>Disponibilités de l’intervenant :</strong>
+                <div className="chips">
+                  {WEEK_ORDER.flatMap((d) => avail.filter((a) => a.day_of_week === d)).map((a) => (
+                    <button type="button" key={a.id} className="chip" onClick={() => setSlot({ ...slot, day_of_week: a.day_of_week,
+                      start_time: a.start_time.slice(0, 5), end_time: a.end_time.slice(0, 5) })}>
+                      {DAYS[a.day_of_week]} {a.start_time.slice(0, 5)}–{a.end_time.slice(0, 5)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <Field label="Jour">
               <select value={slot.day_of_week} onChange={(e) => setSlot({ ...slot, day_of_week: Number(e.target.value) })}>
-                <option value={6}>Samedi</option><option value={0}>Dimanche</option>
-                {[1, 2, 3, 4, 5].map((d) => <option key={d} value={d}>{DAYS[d]}</option>)}
+                {WEEK_ORDER.map((d) => <option key={d} value={d}>{DAYS[d]}</option>)}
               </select>
             </Field>
+            {avail.length > 0 && !fitsAvailability(avail, slot.day_of_week!, slot.start_time!, slot.end_time!) && (
+              <div className="warn-box">⚠️ En dehors des disponibilités de l’intervenant.</div>
+            )}
             <div className="grid-2">
               <Field label="Début"><input type="time" value={slot.start_time} onChange={(e) => setSlot({ ...slot, start_time: e.target.value })} required /></Field>
               <Field label="Fin"><input type="time" value={slot.end_time} onChange={(e) => setSlot({ ...slot, end_time: e.target.value })} required /></Field>
@@ -141,20 +175,45 @@ export function SessionsPanel({ course, manage }: PanelProps) {
   );
 }
 
-function SessionModal({ course, session, onClose, onSaved }:
-  { course: Course; session: Partial<CourseSession>; onClose: () => void; onSaved: () => void }) {
-  const nextSaturday = () => {
-    const d = new Date(); d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7 || 7)); d.setHours(9, 0, 0, 0); return d;
-  };
-  const start0 = session.starts_at ? new Date(session.starts_at) : nextSaturday();
+/** Prochaine occurrence d'une disponibilité (heure de Dakar = UTC), sinon demain 17h. */
+function nextAvailableStart(avail: Availability[]): { start: Date; end: Date } {
+  for (let d = 1; d <= 7; d++) {
+    const day = new Date(); day.setUTCHours(0, 0, 0, 0); day.setUTCDate(day.getUTCDate() + d);
+    const a = avail.filter((x) => x.day_of_week === day.getUTCDay()).sort((x, y) => x.start_time.localeCompare(y.start_time))[0];
+    if (a) {
+      const iso = day.toISOString().slice(0, 10);
+      return { start: new Date(`${iso}T${a.start_time.slice(0, 5)}:00${DAKAR_OFFSET}`), end: new Date(`${iso}T${a.end_time.slice(0, 5)}:00${DAKAR_OFFSET}`) };
+    }
+  }
+  const start = new Date(); start.setDate(start.getDate() + 1); start.setHours(17, 0, 0, 0);
+  return { start, end: new Date(start.getTime() + 2 * 3600000) };
+}
+
+/** Jour et heures (Dakar = UTC) d'une séance, pour la comparer aux disponibilités. */
+function dakarSlot(startIso: string, endIso: string) {
+  const s = new Date(startIso); const e = new Date(endIso);
+  const hm = (d: Date) => d.toISOString().slice(11, 16);
+  return { day: s.getUTCDay(), start: hm(s), end: hm(e) };
+}
+
+function SessionModal({ course, session, availabilities, onClose, onSaved }:
+  { course: Course; session: Partial<CourseSession>; availabilities: Availability[]; onClose: () => void; onSaved: () => void }) {
+  const initial = session.starts_at
+    ? { start: new Date(session.starts_at), end: new Date(session.ends_at!) }
+    : nextAvailableStart(availabilities);
   const [f, setF] = useState({
     title: session.title ?? '', room: session.room ?? '', live_url: session.live_url ?? '', notes: session.notes ?? '',
-    starts: toLocalInput(start0), ends: toLocalInput(session.ends_at ?? new Date(start0.getTime() + 2 * 3600000)),
+    starts: toLocalInput(initial.start), ends: toLocalInput(initial.end),
     status: session.status ?? 'scheduled',
   });
   const { busy, run } = useAction();
+  const outside = Boolean(availabilities.length && f.starts && f.ends && (() => {
+    const s = dakarSlot(fromLocalInput(f.starts)!, fromLocalInput(f.ends)!);
+    return !fitsAvailability(availabilities, s.day, s.start, s.end);
+  })());
   const save = (e: FormEvent) => {
     e.preventDefault();
+    if (outside && !window.confirm('Cette séance est en dehors des disponibilités déclarées par l’intervenant. Continuer quand même ?')) return;
     void run(async () => {
       const row = { course_id: course.id, title: f.title, room: f.room || null, live_url: f.live_url || null, notes: f.notes || null,
         starts_at: fromLocalInput(f.starts), ends_at: fromLocalInput(f.ends), status: f.status };
@@ -171,6 +230,7 @@ function SessionModal({ course, session, onClose, onSaved }:
           <Field label="Début" required><input type="datetime-local" value={f.starts} onChange={(e) => setF({ ...f, starts: e.target.value })} required /></Field>
           <Field label="Fin" required><input type="datetime-local" value={f.ends} onChange={(e) => setF({ ...f, ends: e.target.value })} required /></Field>
         </div>
+        {outside && <div className="warn-box">⚠️ En dehors des disponibilités de l’intervenant ({availabilitySummary(availabilities)}).</div>}
         <Field label="Salle / lieu"><input value={f.room} onChange={(e) => setF({ ...f, room: e.target.value })} /></Field>
         <Field label="Lien du cours en direct" hint="Jitsi, Google Meet, Zoom… (https://)">
           <div className="input-group">

@@ -47,7 +47,7 @@ export function AdminDashboard() {
             { to: '/admin/cours', icon: '📚', title: 'Tous les cours', hint: 'Créer, publier, archiver' },
             { to: '/intervenant/corrections', icon: '✅', title: 'Corrections & notes', hint: 'Copies à corriger', count: data.pending_corrections },
             { to: '/questions', icon: '❓', title: 'Questions des élèves', hint: 'Sans réponse', count: data.questions_open },
-            { to: '/calendrier', icon: '📅', title: 'Calendrier', hint: 'Séances du week-end' },
+            { to: '/calendrier', icon: '📅', title: 'Calendrier', hint: 'Séances de la semaine' },
             { to: '/admin/annonces', icon: '📢', title: 'Publier une annonce', hint: 'Tous, élèves, une classe…' },
             { to: '/admin/referentiel', icon: '🏫', title: 'Classes & matières', hint: 'Programme par niveau' },
             { to: '/admin/moderation', icon: '🛡️', title: 'Modération', hint: 'Questions, réponses, discussions' },

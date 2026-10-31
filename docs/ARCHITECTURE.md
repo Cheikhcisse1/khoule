@@ -46,7 +46,7 @@ classes (CI … Terminale) ──< class_subjects >── subjects
         ┌──────────┬──────────┬──────┴─────┬─────────────┬──────────┐
      lessons   course_materials  schedules  course_sessions  exercises   questions
         │                         (créneaux   (séances datées,   │           │
-  lesson_progress                 week-end)   salle, lien visio) assignments answers
+  lesson_progress                 semaine)    salle, lien visio) assignments answers
                                                                  │
                                                             submissions ── corrections
                                                                  └──────── grades
@@ -97,3 +97,12 @@ src/pages/student/     espace élève
 src/pages/instructor/  espace intervenant
 src/pages/admin/       espace administrateur
 ```
+
+## 7. Planification toute la semaine
+
+* `instructor_availabilities` : chaque intervenant déclare ses créneaux libres (jour, heures, en salle / en ligne).
+  Lecture et écriture : l'intervenant lui-même et l'administration uniquement.
+* L'admin voit le planning hebdomadaire de tous les intervenants (page Affectations) et leurs disponibilités
+  sur chaque candidature.
+* Les créneaux récurrents (`schedules`) et les séances (`course_sessions`) peuvent être placés n'importe quel jour ;
+  l'interface propose les disponibilités de l'intervenant et avertit si une séance est programmée en dehors.

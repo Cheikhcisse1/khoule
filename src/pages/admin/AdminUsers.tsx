@@ -5,6 +5,7 @@ import { useLoad, useRefData } from '../../lib/hooks';
 import { INSTRUCTOR_TYPES, ROLE_LABEL, formatDate, fullName } from '../../lib/format';
 import type { Instructor, Profile, ProfileStatus, Role, Student } from '../../lib/types';
 import { useAuth } from '../../auth/AuthProvider';
+import { availabilitySummary, fetchAvailabilities } from '../../components/Availability';
 import { Badge, Button, Card, ConfirmButton, Empty, ErrorBox, Field, Modal, PageHeader, Spinner, Tabs, useAction } from '../../components/ui';
 
 interface UserRow extends Profile {
@@ -24,18 +25,20 @@ export function AdminUsers() {
   const { run } = useAction();
 
   const { data, error, loading, reload } = useLoad(async () => {
-    const [users, subj, cls, contacts] = await Promise.all([
+    const [users, subj, cls, contacts, availabilities] = await Promise.all([
       supabase.from('profiles').select('*, student:students(*), instructor:instructors!instructors_profile_id_fkey(*)')
         .order('created_at', { ascending: false }).then(must),
       supabase.from('instructor_subjects').select('instructor_id, subject_id').then(must),
       supabase.from('instructor_classes').select('instructor_id, class_id').then(must),
       supabase.from('instructor_contacts').select('profile_id, phone').then(must),
+      fetchAvailabilities(),
     ]);
     return {
       users: users as unknown as UserRow[],
       wishSubjects: subj as { instructor_id: string; subject_id: number }[],
       wishClasses: cls as { instructor_id: string; class_id: number }[],
       phones: contacts as { profile_id: string; phone: string | null }[],
+      availabilities,
     };
   }, []);
 
@@ -115,6 +118,7 @@ export function AdminUsers() {
                   <dt>Expérience</dt><dd>{u.instructor?.experience || '—'}</dd>
                   <dt>Matières souhaitées</dt><dd>{w.subjects.join(', ') || '—'}</dd>
                   <dt>Classes souhaitées</dt><dd>{w.classes.join(', ') || '—'}</dd>
+                  <dt>Disponibilités</dt><dd>{availabilitySummary(data.availabilities.filter((a) => a.instructor_id === u.id))}</dd>
                 </dl>
               </Card>
             );

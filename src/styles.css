@@ -248,6 +248,21 @@ textarea { resize: vertical; }
 .quick .badge { justify-self: start; }
 .admin-enroll { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; padding: .75rem; margin-bottom: 1rem; background: var(--gold-100); border-radius: 12px; }
 .admin-enroll select { max-width: 320px; }
+.avail-list { list-style: none; padding: 0; margin: 0; display: grid; gap: .4rem; }
+.avail-list li { display: grid; grid-template-columns: 100px 1fr; gap: .5rem; align-items: start; padding: .4rem 0; border-bottom: 1px solid var(--line); }
+.avail-list li:last-child { border-bottom: none; }
+.avail-day { padding-top: .2rem; }
+.avail-slots { display: flex; flex-wrap: wrap; gap: .4rem; }
+.avail-slot { display: inline-flex; align-items: center; gap: .35rem; background: var(--green-50); border-radius: 10px; padding: .25rem .6rem; font-size: .9rem; }
+.avail-slot .btn { padding: .1rem .4rem; }
+.avail-form { background: var(--bg); border-radius: 12px; padding: 1rem; }
+.planning { width: 100%; border-collapse: separate; border-spacing: 3px; font-size: .82rem; }
+.planning th { font-size: .75rem; color: var(--muted); text-align: center; padding: .3rem; }
+.planning th:first-child { text-align: left; }
+.planning td { vertical-align: top; background: var(--bg); border-radius: 6px; padding: .3rem; min-width: 70px; }
+.planning td.has { background: var(--green-100); color: var(--green-900); font-weight: 700; }
+.warn-box { background: var(--gold-100); border: 1px solid #f1d79a; border-radius: 10px; padding: .6rem .8rem; font-size: .9rem; }
+@media (max-width: 600px) { .avail-list li { grid-template-columns: 1fr; } }
 .sidebar .logo-text { color: #fff; }
 .sidebar-overlay { display: none; }
 .main { min-width: 0; display: flex; flex-direction: column; }

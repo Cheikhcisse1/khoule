@@ -1,14 +1,25 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase, translateError } from '../lib/supabase';
 import { ROLE_LABEL, formatDate } from '../lib/format';
 import { Avatar, Badge, Button, Card, Field, PageHeader, useAction } from '../components/ui';
 import { IdentityForm, InstructorProfileForm, StudentProfileForm } from '../components/ProfileForms';
+import { AvailabilityEditor } from '../components/Availability';
 
 export function ProfilePage() {
   const { profile, session } = useAuth();
   const [password, setPassword] = useState('');
   const { busy, run } = useAction();
+  const { hash } = useLocation();
+
+  // Lien direct vers une section (ex. /profil#disponibilites)
+  useEffect(() => {
+    if (!hash) return;
+    const t = setTimeout(() => { document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth' }); }, 300);
+    return () => clearTimeout(t);
+  }, [hash]);
+
   if (!profile) return null;
 
   const changePassword = (e: FormEvent) => {
@@ -37,6 +48,15 @@ export function ProfilePage() {
       <Card title="Identité"><IdentityForm /></Card>
       {profile.role === 'student' && <Card title="Scolarité et parent / tuteur"><StudentProfileForm /></Card>}
       {profile.role === 'instructor' && <Card title="Profil d’intervenant"><InstructorProfileForm /></Card>}
+      {(profile.role === 'instructor' || profile.role === 'admin') && (
+        <section id="disponibilites">
+          <Card title="📆 Mes disponibilités">
+            <p className="small muted">Les cours peuvent avoir lieu toute la semaine. Indiquez vos créneaux libres :
+              l’administration s’en sert pour vous affecter, et vos séances sont vérifiées par rapport à ces créneaux.</p>
+            <AvailabilityEditor instructorId={profile.id} />
+          </Card>
+        </section>
+      )}
       <Card title="Sécurité">
         <form className="form" onSubmit={changePassword}>
           <Field label="Nouveau mot de passe"><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" /></Field>

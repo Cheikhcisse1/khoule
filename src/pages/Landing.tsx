@@ -10,7 +10,7 @@ const LEVELS = [
 const STEPS = [
   { n: '1', title: 'Je crée mon compte', text: 'L’élève indique sa classe ; le parent ou tuteur donne son accord.' },
   { n: '2', title: 'Je rejoins mes cours', text: 'Les cours de ma classe apparaissent : je m’inscris en un clic.' },
-  { n: '3', title: 'J’apprends le week-end', text: 'Séances le samedi et le dimanche, en salle ou en ligne.' },
+  { n: '3', title: 'J’apprends chaque semaine', text: 'Des séances tout au long de la semaine, en salle ou en ligne, selon les disponibilités des intervenants.' },
   { n: '4', title: 'Je progresse', text: 'Exercices, devoirs corrigés, notes et questions aux intervenants.' },
 ];
 
@@ -30,7 +30,7 @@ export function Landing() {
           <p className="eyebrow">Soutien scolaire communautaire · Khoulé, Sénégal</p>
           <h1>Ensemble, faisons réussir <span>les enfants de Khoulé</span>.</h1>
           <p className="hero-lead">
-            Chaque week-end, des enseignants, professeurs et étudiants originaires de Khoulé
+            Tout au long de la semaine, des enseignants, professeurs et étudiants originaires de Khoulé
             accompagnent les élèves de la CI à la Terminale — en salle comme en ligne.
           </p>
           <div className="hero-cta">
@@ -39,9 +39,9 @@ export function Landing() {
           </div>
         </div>
         <div className="hero-card" aria-hidden>
-          <div className="hero-slot"><span>Samedi</span><strong>09:00 — Mathématiques 3e</strong><small>Salle 2 · M. Diop</small></div>
-          <div className="hero-slot"><span>Samedi</span><strong>11:00 — Français CM2</strong><small>En ligne · Mme Sow</small></div>
-          <div className="hero-slot"><span>Dimanche</span><strong>10:00 — Physique-Chimie Tle</strong><small>Salle 1 · M. Ndiaye</small></div>
+          <div className="hero-slot"><span>Mardi</span><strong>17:30 — Mathématiques 3e</strong><small>Salle 2 · M. Diop</small></div>
+          <div className="hero-slot"><span>Jeudi</span><strong>18:00 — Français CM2</strong><small>En ligne · Mme Sow</small></div>
+          <div className="hero-slot"><span>Samedi</span><strong>10:00 — Physique-Chimie Tle</strong><small>Salle 1 · M. Ndiaye</small></div>
           <div className="hero-badge">📝 Devoir corrigé : 16/20</div>
         </div>
       </section>
@@ -77,7 +77,7 @@ export function Landing() {
           <div>
             <h2>Vous êtes ressortissant de Khoulé ?</h2>
             <p>
-              Enseignant, professeur, étudiant ou professionnel : donnez quelques heures le week-end.
+              Enseignant, professeur, étudiant ou professionnel : donnez quelques heures par semaine, quand vous êtes disponible.
               Proposez votre candidature, l’équipe vous affecte aux classes et matières qui vous correspondent.
             </p>
           </div>

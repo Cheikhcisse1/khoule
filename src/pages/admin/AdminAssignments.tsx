@@ -2,7 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { must, supabase } from '../../lib/supabase';
 import { useLoad, useRefData } from '../../lib/hooks';
-import { fullName } from '../../lib/format';
+import { DAYS, fullName } from '../../lib/format';
+import { AvailabilityList, WEEK_ORDER, fetchAvailabilities } from '../../components/Availability';
 import type { Profile } from '../../lib/types';
 import { Button, Card, ConfirmButton, Empty, ErrorBox, Field, PageHeader, Spinner, useAction } from '../../components/ui';
 
@@ -16,14 +17,16 @@ export function AdminAssignments() {
   const { busy, run } = useAction();
 
   const { data, error, loading, reload } = useLoad(async () => {
-    const [rows, instructors, wishS, wishC] = await Promise.all([
+    const [rows, instructors, wishS, wishC, availabilities] = await Promise.all([
       supabase.from('teaching_assignments').select('id, instructor_id, class_id, subject_id').then(must),
       supabase.from('profiles').select('id, first_name, last_name, role, status, instructor:instructors!instructors_profile_id_fkey!inner(application_status, specialty)')
         .eq('role', 'instructor').eq('instructor.application_status', 'approved').order('last_name').then(must),
       supabase.from('instructor_subjects').select('instructor_id, subject_id').then(must),
       supabase.from('instructor_classes').select('instructor_id, class_id').then(must),
+      fetchAvailabilities(),
     ]);
     return {
+      availabilities,
       rows: rows as Row[],
       instructors: instructors as unknown as (Profile & { instructor: { specialty: string | null } })[],
       wishS: wishS as { instructor_id: string; subject_id: number }[],
@@ -75,7 +78,11 @@ export function AdminAssignments() {
                 </select>
               </Field>
               {selected && (
-                <p className="small muted">Souhaits : {wishesS.join(', ') || 'aucune matière'} · {wishesC.join(', ') || 'aucune classe'}</p>
+                <>
+                  <p className="small muted">Souhaits : {wishesS.join(', ') || 'aucune matière'} · {wishesC.join(', ') || 'aucune classe'}</p>
+                  <div className="small"><strong>Disponibilités :</strong>
+                    <AvailabilityList slots={data.availabilities.filter((a) => a.instructor_id === selected)} /></div>
+                </>
               )}
               <div className="grid-2">
                 <Field label="Classe">
@@ -100,6 +107,37 @@ export function AdminAssignments() {
             : <p className="muted">Toutes les classes ont au moins un intervenant. 👏</p>}
         </Card>
       </div>
+
+      <Card title="📆 Planning des disponibilités (semaine)">
+        {data.instructors.length === 0 ? <p className="muted">Aucun intervenant validé.</p> : (
+          <div className="table-wrap">
+            <table className="planning">
+              <thead><tr><th>Intervenant</th>{WEEK_ORDER.map((d) => <th key={d}>{DAYS[d].slice(0, 3)}.</th>)}</tr></thead>
+              <tbody>
+                {data.instructors.map((i) => {
+                  const mine = data.availabilities.filter((a) => a.instructor_id === i.id);
+                  return (
+                    <tr key={i.id}>
+                      <th scope="row">
+                        <button className="link" onClick={() => setParams({ intervenant: i.id })}>{fullName(i)}</button>
+                        {!mine.length && <><br /><small className="muted">non renseigné</small></>}
+                      </th>
+                      {WEEK_ORDER.map((d) => {
+                        const slots = mine.filter((a) => a.day_of_week === d);
+                        return (
+                          <td key={d} className={slots.length ? 'has' : ''}>
+                            {slots.map((s) => <div key={s.id}>{s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)}</div>)}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
 
       <Card title={`Affectations en cours (${data.rows.length})`}>
         {data.rows.length ? (

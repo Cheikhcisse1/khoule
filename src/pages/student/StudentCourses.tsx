@@ -42,7 +42,7 @@ export function StudentCourses() {
 
   return (
     <>
-      <PageHeader title="Mes cours" subtitle="Les cours du week-end proposés pour votre classe." />
+      <PageHeader title="Mes cours" subtitle="Les cours proposés pour votre classe, toute la semaine." />
       <Tabs value={tab} onChange={setTab}
         tabs={[{ id: 'mine', label: 'Mes cours', count: data.mine.length }, { id: 'catalog', label: 'Cours disponibles', count: available.length }]} />
 

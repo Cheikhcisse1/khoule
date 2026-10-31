@@ -2,6 +2,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthProvider';
 import { Logo } from '../../components/Logo';
 import { InstructorProfileForm } from '../../components/ProfileForms';
+import { AvailabilityEditor } from '../../components/Availability';
 import { Button, Card } from '../../components/ui';
 
 /** Espace d'un intervenant dont la candidature n'est pas encore validée. */
@@ -39,6 +40,12 @@ export function Application() {
         <Card title="Mon profil d’intervenant">
           <InstructorProfileForm />
         </Card>
+        {profile && (
+          <Card title="📆 Mes disponibilités dans la semaine">
+            <p className="small muted">Indiquez les jours et heures où vous pouvez donner cours (en salle ou en ligne).</p>
+            <AvailabilityEditor instructorId={profile.id} />
+          </Card>
+        )}
       </div>
     </div>
   );

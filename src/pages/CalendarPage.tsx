@@ -51,7 +51,7 @@ export function CalendarPage() {
 
   return (
     <>
-      <PageHeader title="Calendrier des cours" subtitle="Les séances ont lieu principalement le samedi et le dimanche."
+      <PageHeader title="Calendrier des cours" subtitle="Les séances ont lieu toute la semaine, selon les disponibilités des intervenants."
         actions={profile!.role !== 'admin' && (
           <label className="check"><input type="checkbox" checked={onlyMine} onChange={(e) => setOnlyMine(e.target.checked)} />
             <span>{profile!.role === 'student' ? 'Uniquement mes cours' : 'Uniquement mes séances'}</span></label>

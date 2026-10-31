@@ -246,6 +246,27 @@ do $$ begin
 end $$;
 reset role;
 
+-- ---------- Disponibilités des intervenants ---------------------------------
+select tests.login(:prof); set role authenticated;
+insert into public.instructor_availabilities (instructor_id, day_of_week, start_time, end_time, mode)
+values (:prof, 2, '17:00', '19:00', 'en_ligne'), (:prof, 4, '18:00', '20:00', 'both');
+select tests.should_fail(format($q$insert into public.instructor_availabilities (instructor_id, day_of_week, start_time, end_time)
+  values (%L, 1, '10:00', '12:00')$q$, :prof2));
+select tests.should_fail(format($q$insert into public.instructor_availabilities (instructor_id, day_of_week, start_time, end_time)
+  values (%L, 1, '12:00', '10:00')$q$, :prof));
+reset role;
+select tests.login(:s2); set role authenticated;
+do $$ begin
+  assert (select count(*) from public.instructor_availabilities) = 0, 'T38 : dispos invisibles des élèves';
+end $$;
+reset role;
+select tests.login(:admin); set role authenticated;
+do $$ begin
+  assert (select count(*) from public.instructor_availabilities) = 2, 'T39 : l''admin voit le planning';
+  raise notice 'OK  disponibilités : saisie par l''intervenant, planning admin, cachées aux élèves';
+end $$;
+reset role;
+
 -- ---------- Admin : changement de rôle et inscription manuelle --------------
 select tests.login(:s3); set role authenticated;
 select tests.should_fail(format($q$insert into public.instructors (profile_id) values (%L)$q$, :s3));
