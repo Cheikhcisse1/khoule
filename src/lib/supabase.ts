@@ -26,5 +26,9 @@ export function translateError(message: string): string {
     return 'Action non autorisée pour votre compte.';
   if (m.includes('duplicate key')) return 'Cet élément existe déjà.';
   if (m.includes('failed to fetch')) return 'Connexion impossible. Vérifiez votre accès Internet.';
+  if (m.includes('rate limit')) return 'Trop de tentatives en peu de temps. Patientez quelques minutes puis réessayez.';
+  if (m.includes('for security purposes')) return 'Pour des raisons de sécurité, patientez une minute avant de réessayer.';
+  if (m.includes('unable to validate email') || m.includes('invalid format')) return 'Adresse e-mail invalide.';
+  if (m.includes('weak password') || m.includes('password is known')) return 'Mot de passe trop faible : choisissez-en un plus long ou plus original.';
   return message;
 }
