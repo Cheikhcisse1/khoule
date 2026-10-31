@@ -7,6 +7,7 @@ import { COURSE_STATUS } from '../../lib/format';
 import { Badge, Card, Empty, ErrorBox, PageHeader, Spinner, StatCard } from '../../components/ui';
 import { SessionItem } from '../../components/CourseBits';
 import { AvailabilityList, fetchAvailabilities } from '../../components/Availability';
+import { LiveNowButton } from '../../components/LiveNow';
 
 export interface CourseStat {
   course_id: string; title: string; class_code: string; subject: string; status: string;
@@ -36,6 +37,7 @@ export function InstructorDashboard() {
     <>
       <PageHeader title={`Bonjour ${profile!.first_name} 👋`} subtitle="Merci de contribuer à la réussite des élèves de Khoulé."
         actions={<>
+          {data.assignments.length > 0 && <LiveNowButton />}
           <Link to="/documents" className="btn btn-secondary">📤 Déposer un document / une annale</Link>
           <Link to="/intervenant/cours" className="btn btn-primary">+ Nouveau cours</Link>
         </>} />

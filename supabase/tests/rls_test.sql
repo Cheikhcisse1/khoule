@@ -246,6 +246,25 @@ do $$ begin
 end $$;
 reset role;
 
+-- ---------- Cours en direct immédiat ----------------------------------------
+select tests.login(:prof); set role authenticated;
+insert into public.course_sessions (course_id, title, starts_at, ends_at, live_url)
+values ('dddddddd-0000-0000-0000-000000000001', 'Direct : fractions', now(), now() + interval '1 hour', 'https://meet.jit.si/test-direct');
+reset role;
+select tests.login(:s2); set role authenticated;
+do $$ begin
+  assert (select count(*) from public.notifications where type = 'live') = 1, 'T45 : élève de la classe (non inscrit) prévenu du direct';
+  assert (select count(*) from public.course_sessions where live_url is not null and starts_at <= now() and ends_at >= now()) = 1,
+         'T46 : le direct est visible (bouton Rejoindre)';
+end $$;
+reset role;
+select tests.login(:s3); set role authenticated;
+do $$ begin
+  assert (select count(*) from public.notifications where type = 'live') = 0, 'T47 : autre classe non prévenue';
+  raise notice 'OK  direct immédiat : notification de toute la classe, visibilité du lien';
+end $$;
+reset role;
+
 -- ---------- Bibliothèque « Documents & annales » ----------------------------
 select tests.login(:prof); set role authenticated;
 insert into public.library_documents (title, kind, class_id, subject_id, year, file_path, uploaded_by)

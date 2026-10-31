@@ -2,9 +2,9 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthProvider';
 import { must, supabase } from '../../lib/supabase';
 import { useLoad, useRefData } from '../../lib/hooks';
-import { fetchStudentWork, fetchUpcomingSessions, myEnrolledCourseIds } from '../../lib/queries';
+import { SESSION_SELECT, fetchStudentWork, fetchUpcomingSessions, myEnrolledCourseIds } from '../../lib/queries';
 import { formatDate } from '../../lib/format';
-import type { Announcement } from '../../lib/types';
+import type { Announcement, CourseSession } from '../../lib/types';
 import { Card, Empty, ErrorBox, PageHeader, Progress, Spinner, StatCard } from '../../components/ui';
 import { DueBadge, SessionItem } from '../../components/CourseBits';
 
@@ -20,14 +20,19 @@ export function StudentDashboard() {
 
   const { data, error, loading, reload } = useLoad(async () => {
     const ids = await myEnrolledCourseIds(uid);
-    const [sessions, work, progress, announcements] = await Promise.all([
+    const nowIso = new Date().toISOString();
+    const [sessions, work, progress, announcements, live] = await Promise.all([
       fetchUpcomingSessions(ids, 5),
       fetchStudentWork(uid),
       supabase.rpc('my_progress').then(must),
       supabase.from('announcements').select('*').order('pinned', { ascending: false })
         .order('published_at', { ascending: false }).limit(3).then(must),
+      // Cours en direct en ce moment dans la classe de l'élève (inscrit ou non)
+      supabase.from('course_sessions').select(SESSION_SELECT).lte('starts_at', new Date(Date.now() + 15 * 60000).toISOString())
+        .gte('ends_at', nowIso).neq('status', 'cancelled').not('live_url', 'is', null).order('starts_at').then(must),
     ]);
-    return { ids, sessions, work, progress: progress as ProgressRow[], announcements: announcements as Announcement[] };
+    return { ids, sessions, work, progress: progress as ProgressRow[], announcements: announcements as Announcement[],
+      live: live as unknown as CourseSession[] };
   }, [uid]);
 
   const className = ref?.classes.find((c) => c.id === student?.class_id)?.name;
@@ -42,6 +47,17 @@ export function StudentDashboard() {
   return (
     <>
       <PageHeader title={`Bonjour ${profile!.first_name} 👋`} subtitle={className ? `Classe : ${className}` : 'Pensez à indiquer votre classe dans votre profil.'} />
+
+      {data.live.map((s) => (
+        <div key={s.id} className="live-banner">
+          <div>
+            <strong><span className="live-dot" aria-hidden />En direct : {s.title}</strong><br />
+            <span className="small muted">{s.course?.subject?.name} · {s.course?.class?.code}
+              {new Date(s.starts_at) > new Date() ? ' · commence bientôt' : ' · en cours'}</span>
+          </div>
+          <a href={s.live_url!} target="_blank" rel="noopener noreferrer" className="btn btn-live">🎥 Rejoindre le cours</a>
+        </div>
+      ))}
 
       <div className="stats">
         <StatCard icon="📚" label="Cours suivis" value={data.ids.length} />
