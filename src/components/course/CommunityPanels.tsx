@@ -10,6 +10,7 @@ import type { PanelProps } from './ContentPanels';
 import {
   WEEK_ORDER, availabilitySummary, fetchAvailabilities, fitsAvailability, type Availability,
 } from '../Availability';
+import { endLiveSession, isLive } from '../LiveNow';
 
 // ---------------------------------------------------------------------------
 // Séances et créneaux (toute la semaine, selon les disponibilités)
@@ -117,8 +118,12 @@ export function SessionsPanel({ course, manage }: PanelProps) {
                   <SessionItem s={s} showCourse={false} />
                   {manage && (
                     <div className="row small-row">
+                      {isLive(s) && <button className="link danger-link" onClick={() => {
+                        if (!window.confirm('Terminer ce cours en direct maintenant ?')) return;
+                        void run(async () => { await endLiveSession(s); await reload(); }, 'Direct terminé.');
+                      }}>⏹ Terminer le direct</button>}
                       <button className="link" onClick={() => setEditing(s)}>Modifier</button>
-                      {s.status !== 'cancelled' && <button className="link" onClick={() => void run(async () => {
+                      {s.status !== 'cancelled' && !isLive(s) && <button className="link" onClick={() => void run(async () => {
                         must(await supabase.from('course_sessions').update({ status: 'cancelled' }).eq('id', s.id)); await reload();
                       }, 'Séance annulée.')}>Annuler la séance</button>}
                     </div>

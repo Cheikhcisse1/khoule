@@ -7,7 +7,7 @@ import { COURSE_STATUS } from '../../lib/format';
 import { Badge, Card, Empty, ErrorBox, PageHeader, Spinner, StatCard } from '../../components/ui';
 import { SessionItem } from '../../components/CourseBits';
 import { AvailabilityList, fetchAvailabilities } from '../../components/Availability';
-import { LiveNowButton } from '../../components/LiveNow';
+import { LiveControl, LiveNowButton, fetchMyLiveSessions } from '../../components/LiveNow';
 
 export interface CourseStat {
   course_id: string; title: string; class_code: string; subject: string; status: string;
@@ -20,12 +20,13 @@ export function InstructorDashboard() {
   const { data, error, loading, reload } = useLoad(async () => {
     const stats = must(await supabase.rpc('instructor_course_stats')) as CourseStat[];
     const mine = stats.map((s) => s.course_id);
-    const [sessions, assignments, availabilities] = await Promise.all([
+    const [sessions, assignments, availabilities, live] = await Promise.all([
       fetchUpcomingSessions(mine, 5),
       supabase.from('teaching_assignments').select('class:classes(code), subject:subjects(name)').eq('instructor_id', uid).then(must),
       fetchAvailabilities(uid),
+      fetchMyLiveSessions(uid),
     ]);
-    return { stats, sessions, availabilities,
+    return { stats, sessions, availabilities, live,
       assignments: assignments as unknown as { class: { code: string }; subject: { name: string } }[] };
   }, [uid]);
 
@@ -37,10 +38,11 @@ export function InstructorDashboard() {
     <>
       <PageHeader title={`Bonjour ${profile!.first_name} 👋`} subtitle="Merci de contribuer à la réussite des élèves de Khoulé."
         actions={<>
-          {data.assignments.length > 0 && <LiveNowButton />}
+          {data.assignments.length > 0 && <LiveNowButton onStarted={reload} />}
           <Link to="/documents" className="btn btn-secondary">📤 Déposer un document / une annale</Link>
           <Link to="/intervenant/cours" className="btn btn-primary">+ Nouveau cours</Link>
         </>} />
+      <LiveControl sessions={data.live} onEnded={reload} />
       {data.stats.length === 0 && data.assignments.length > 0 && (
         <div className="alert alert-info">
           <span><strong>Pour commencer :</strong> déposez vos annales et fiches dans <Link to="/documents">Documents & annales</Link>,

@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { must, supabase } from '../lib/supabase';
 import { useLoad } from '../lib/hooks';
 import { COURSE_SELECT } from '../lib/queries';
-import { LiveNowButton } from '../components/LiveNow';
+import { CourseLiveControl, LiveNowButton } from '../components/LiveNow';
 import { COURSE_STATUS, fullName } from '../lib/format';
 import type { Course } from '../lib/types';
 import { Badge, Button, Card, Empty, ErrorBox, RichText, Spinner, Tabs, useAction } from '../components/ui';
@@ -21,6 +21,7 @@ export function CoursePage() {
   const uid = profile!.id;
   const isAdmin = profile!.role === 'admin';
   const [tab, setTab] = useState<Tab>('lessons');
+  const [liveKey, setLiveKey] = useState(0);
   const { run, busy } = useAction();
 
   const { data, error, loading, reload } = useLoad(async () => {
@@ -76,7 +77,7 @@ export function CoursePage() {
           <h1>{course.title}</h1>
           <p>🧑‍🏫 <Link to={`/intervenants/${course.instructor_id}`}>{fullName(course.instructor)}</Link></p>
         </div>
-        {manage && <LiveNowButton courseId={course.id} label="🔴 Démarrer le direct" />}
+        {manage && <LiveNowButton courseId={course.id} label="🔴 Démarrer le direct" onStarted={() => setLiveKey((k) => k + 1)} />}
         {profile!.role === 'student' && (
           enrolled
             ? <Button variant="ghost" onClick={() => window.confirm('Quitter ce cours ?') && void leave()}>Quitter le cours</Button>
@@ -84,6 +85,7 @@ export function CoursePage() {
         )}
       </header>
 
+      {manage && <CourseLiveControl courseId={course.id} userId={uid} refreshKey={liveKey} />}
       {course.description && <Card><RichText text={course.description} /></Card>}
 
       {hasAccess ? (

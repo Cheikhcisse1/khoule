@@ -10,6 +10,64 @@ export function jitsiRoom(title: string): string {
   return `https://meet.jit.si/KhouleEducation-${slug.slice(0, 40)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+interface LiveSession { id: string; title: string; starts_at: string; ends_at: string; live_url: string | null; course?: { id: string; title: string } }
+
+/** Termine une séance en direct maintenant (même si l'heure de fin prévue n'est pas atteinte). */
+export async function endLiveSession(s: { id: string; starts_at: string }): Promise<void> {
+  // la fin doit rester après le début (contrainte de la table)
+  const end = new Date(Math.max(Date.now(), new Date(s.starts_at).getTime() + 60000)).toISOString();
+  must(await supabase.from('course_sessions').update({ status: 'done', ends_at: end }).eq('id', s.id));
+}
+
+export function isLive(s: { starts_at: string; ends_at: string; status?: string }): boolean {
+  const now = Date.now();
+  return s.status !== 'cancelled' && s.status !== 'done'
+    && new Date(s.starts_at).getTime() <= now && new Date(s.ends_at).getTime() >= now;
+}
+
+/** Bandeau de contrôle d'un direct en cours, côté intervenant / admin : rejoindre ou terminer. */
+export function LiveControl({ sessions, onEnded }: { sessions: LiveSession[]; onEnded: () => void }) {
+  const { busy, run } = useAction();
+  if (!sessions.length) return null;
+  return (
+    <>
+      {sessions.map((s) => (
+        <div key={s.id} className="live-banner">
+          <div>
+            <strong><span className="live-dot" aria-hidden />Direct en cours : {s.title}</strong><br />
+            <span className="small muted">{s.course?.title ? `${s.course.title} · ` : ''}fin prévue à{' '}
+              {new Date(s.ends_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Dakar' })}</span>
+          </div>
+          <div className="row">
+            {s.live_url && <a href={s.live_url} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">🎥 Revenir dans la salle</a>}
+            <Button variant="danger" loading={busy} onClick={() => {
+              if (!window.confirm('Terminer le cours en direct maintenant ? Les élèves ne verront plus le bouton « Rejoindre ».')) return;
+              void run(async () => { await endLiveSession(s); onEnded(); },
+                'Direct terminé. Pensez à quitter aussi la salle de visio (bouton raccrocher).');
+            }}>⏹ Terminer le direct</Button>
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+/** Directs en cours pour les cours que l'utilisateur gère (un cours précis, ou tous ses cours). */
+export async function fetchMyLiveSessions(userId: string, courseId?: string): Promise<LiveSession[]> {
+  const nowIso = new Date().toISOString();
+  let q = supabase.from('course_sessions')
+    .select('id, title, starts_at, ends_at, live_url, status, course:courses!inner(id, title, instructor_id)')
+    .lte('starts_at', nowIso).gte('ends_at', nowIso).eq('status', 'scheduled');
+  q = courseId ? q.eq('course_id', courseId) : q.eq('course.instructor_id', userId);
+  return must(await q) as unknown as LiveSession[];
+}
+
+/** Bandeau des directs en cours d'un cours (rechargé quand `refreshKey` change). */
+export function CourseLiveControl({ courseId, userId, refreshKey }: { courseId: string; userId: string; refreshKey: number }) {
+  const { data, reload } = useLoad(() => fetchMyLiveSessions(userId, courseId), [courseId, refreshKey]);
+  return <LiveControl sessions={data ?? []} onEnded={reload} />;
+}
+
 interface OwnCourse { id: string; title: string; class_id: number; subject_id: number; status: string }
 interface Pair { class_id: number; subject_id: number }
 
@@ -17,17 +75,18 @@ interface Pair { class_id: number; subject_id: number }
  * Démarre un cours en visio immédiatement : choisit (ou crée) le cours, programme une séance
  * qui commence maintenant, notifie les élèves et ouvre la salle de visioconférence.
  */
-export function LiveNowButton({ courseId, label = '🔴 Démarrer un cours en direct' }: { courseId?: string; label?: string }) {
+export function LiveNowButton({ courseId, label = '🔴 Démarrer un cours en direct', onStarted }:
+  { courseId?: string; label?: string; onStarted?: () => void }) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <Button className="btn-live" onClick={() => setOpen(true)}>{label}</Button>
-      {open && <LiveNowModal courseId={courseId} onClose={() => setOpen(false)} />}
+      {open && <LiveNowModal courseId={courseId} onClose={() => setOpen(false)} onStarted={onStarted} />}
     </>
   );
 }
 
-function LiveNowModal({ courseId, onClose }: { courseId?: string; onClose: () => void }) {
+function LiveNowModal({ courseId, onClose, onStarted }: { courseId?: string; onClose: () => void; onStarted?: () => void }) {
   const { profile } = useAuth();
   const uid = profile!.id;
   const isAdmin = profile!.role === 'admin';
@@ -85,6 +144,7 @@ function LiveNowModal({ courseId, onClose }: { courseId?: string; onClose: () =>
       }));
       if (win) win.location.href = live_url; else window.location.href = live_url;
       onClose();
+      onStarted?.();
     }, 'Cours en direct lancé : les élèves sont notifiés et voient le bouton « Rejoindre ».').then((ok) => { if (!ok) win?.close(); });
   };
 

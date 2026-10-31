@@ -46,10 +46,10 @@ export function SessionItem({ s, showCourse = true }: { s: CourseSession; showCo
         )}
         <span className="small muted">
           🕘 {formatTime(s.starts_at)} – {formatTime(s.ends_at)}{s.room ? ` · 📍 ${s.room}` : ''}
-          {s.status === 'cancelled' && ' · Annulée'}
+          {s.status === 'cancelled' && ' · Annulée'}{s.status === 'done' && ' · Terminée'}
         </span>
       </div>
-      {s.live_url && s.status !== 'cancelled' && (
+      {s.live_url && s.status !== 'cancelled' && s.status !== 'done' && (
         <a href={s.live_url} target="_blank" rel="noopener noreferrer" className={`btn ${live ? 'btn-primary pulse' : 'btn-secondary'}`}>
           {live ? '🔴 Rejoindre' : '🎥 Lien visio'}
         </a>

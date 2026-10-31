@@ -261,7 +261,24 @@ reset role;
 select tests.login(:s3); set role authenticated;
 do $$ begin
   assert (select count(*) from public.notifications where type = 'live') = 0, 'T47 : autre classe non prévenue';
-  raise notice 'OK  direct immédiat : notification de toute la classe, visibilité du lien';
+end $$;
+reset role;
+-- L'élève ne peut pas terminer le direct ; l'intervenant, oui
+select tests.login(:s2); set role authenticated;
+update public.course_sessions set status = 'done' where title = 'Direct : fractions';
+reset role;
+select tests.login(:prof); set role authenticated;
+do $$ begin
+  assert (select status from public.course_sessions where title = 'Direct : fractions') = 'scheduled', 'T48 : un élève ne peut pas terminer le direct';
+end $$;
+update public.course_sessions set status = 'done', ends_at = greatest(now(), starts_at + interval '1 minute')
+ where title = 'Direct : fractions';
+reset role;
+select tests.login(:s2); set role authenticated;
+do $$ begin
+  assert (select count(*) from public.course_sessions where status = 'scheduled' and live_url is not null
+          and starts_at <= now() and ends_at >= now()) = 0, 'T49 : direct terminé, plus de bouton Rejoindre';
+  raise notice 'OK  direct immédiat : notification de la classe, fin anticipée par l''intervenant';
 end $$;
 reset role;
 

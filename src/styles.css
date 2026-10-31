@@ -328,6 +328,7 @@ textarea { resize: vertical; }
 .page-actions { flex-wrap: wrap; }
 .btn-live { background: #c62828; color: #fff; }
 .btn-live:hover { background: #a31f1f; }
+.link.danger-link { color: #c62828; font-weight: 700; }
 .live-banner { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: space-between;
   background: linear-gradient(90deg, #fdecea, #fff); border: 1px solid #f5c2bc; border-left: 5px solid #c62828;
   border-radius: 12px; padding: .8rem 1rem; margin-bottom: 1rem; }
