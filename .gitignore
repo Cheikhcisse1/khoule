@@ -6,3 +6,6 @@ dist
 *.local.md
 tsconfig.tsbuildinfo
 __pycache__
+docs/video/frames/
+docs/video/shots/
+docs/video/*.mp4

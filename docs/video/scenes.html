@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Scènes vidéo — Khoulé Éducation</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root { --g9:#0f3d22; --g8:#14532d; --g7:#1f7a4d; --g1:#e3f2e8; --gold:#f4b942; --gold1:#fdf1d6; --clay:#c2562f;
+          --blue:#2c5aa0; --ink:#1d2a22; --muted:#5f6d64; --line:#e2e7e3; --bg:#f6f7f2; --red:#c62828; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; font-family: 'Nunito', sans-serif; color: var(--ink); }
+  .scene { position: absolute; inset: 0; display: none; padding: 110px 140px; }
+  .scene.on { display: flex; }
+  .scene:not(.on) { display: none !important; }
+  .dark { background: radial-gradient(circle at 85% 90%, #1b6b3d 0, transparent 38%), linear-gradient(150deg, var(--g9), var(--g8)); color: #fff; }
+  .light { background: var(--bg); }
+  h1 { font-family: 'Fraunces', serif; font-size: 92px; line-height: 1.05; letter-spacing: -1px; }
+  h2 { font-family: 'Fraunces', serif; font-size: 72px; line-height: 1.08; margin-bottom: 26px; }
+  .gold { color: var(--gold); }
+  .green { color: var(--g7); }
+  .eyebrow { font-size: 26px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; color: var(--gold); margin-bottom: 26px; }
+  .eyebrow.g { color: var(--g7); }
+  .lead { font-size: 38px; line-height: 1.45; color: #d7e9dd; max-width: 1150px; }
+  .light .lead { color: var(--muted); }
+  .col { display: flex; flex-direction: column; justify-content: center; }
+  .row { display: flex; gap: 70px; align-items: center; width: 100%; }
+  .grow { flex: 1; }
+  .logo { display: flex; align-items: center; gap: 26px; margin-bottom: 60px; }
+  .logo svg { width: 130px; height: 130px; }
+  .logo span { font-family: 'Fraunces', serif; font-size: 64px; font-weight: 700; }
+  .pill { display: inline-block; background: var(--gold); color: var(--g9); font-weight: 900; font-size: 30px; padding: 14px 34px; border-radius: 999px; }
+  .bullets { list-style: none; display: grid; gap: 30px; margin-top: 20px; }
+  .bullets li { font-size: 36px; display: flex; gap: 22px; align-items: flex-start; line-height: 1.35; }
+  .bullets b { color: var(--g7); }
+  .dark .bullets b { color: var(--gold); }
+  .ico { width: 64px; height: 64px; flex: 0 0 64px; border-radius: 18px; display: grid; place-items: center; font-size: 34px; background: var(--g1); }
+  .dark .ico { background: rgba(255,255,255,.12); }
+  /* cadres */
+  .browser { background: #fff; border-radius: 22px; box-shadow: 0 40px 90px rgba(10,40,20,.35); overflow: hidden; border: 1px solid var(--line); }
+  .browser .bar { height: 54px; background: #eef1ee; display: flex; align-items: center; gap: 12px; padding: 0 22px; }
+  .browser .bar i { width: 15px; height: 15px; border-radius: 50%; background: #e0a; display: block; }
+  .browser .bar i:nth-child(1) { background: #ff6159; } .browser .bar i:nth-child(2) { background: #ffbd2e; } .browser .bar i:nth-child(3) { background: #28c941; }
+  .browser .url { margin-left: 20px; background: #fff; border-radius: 10px; padding: 7px 18px; font-size: 20px; color: var(--muted); flex: 1; }
+  .browser img { display: block; width: 100%; }
+  .phone { width: 430px; border-radius: 56px; background: #111; padding: 18px; box-shadow: 0 40px 90px rgba(0,0,0,.45); }
+  .phone img { width: 100%; border-radius: 40px; display: block; }
+  /* maquettes d'interface */
+  .ui { background: #fff; border-radius: 24px; box-shadow: 0 30px 70px rgba(10,40,20,.18); border: 1px solid var(--line); padding: 38px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
+  .stat { background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 24px; display: flex; gap: 18px; align-items: center; }
+  .stat .si { width: 66px; height: 66px; border-radius: 16px; display: grid; place-items: center; font-size: 32px; }
+  .stat .v { font-size: 42px; font-weight: 900; line-height: 1; } .stat .l { font-size: 20px; color: var(--muted); }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 26px 28px; }
+  .card h3 { font-size: 26px; margin-bottom: 16px; }
+  .sess { display: flex; gap: 18px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .sess:last-child { border: 0; }
+  .date { width: 76px; text-align: center; border-left: 6px solid var(--g7); background: var(--bg); border-radius: 12px; padding: 6px; font-size: 15px; color: var(--muted); text-transform: uppercase; line-height: 1.1; }
+  .date b { display: block; font-size: 30px; color: var(--ink); }
+  .btn { display: inline-flex; align-items: center; gap: 10px; border-radius: 14px; padding: 14px 26px; font-weight: 900; font-size: 24px; background: var(--g7); color: #fff; }
+  .btn.red { background: var(--red); } .btn.light { background: var(--g1); color: var(--g8); } .btn.ghost { background: transparent; border: 2px solid var(--line); color: var(--g8); }
+  .badge { display: inline-block; border-radius: 999px; padding: 6px 16px; font-weight: 800; font-size: 19px; background: var(--g1); color: var(--g8); }
+  .badge.w { background: var(--gold1); color: #8a5a00; } .badge.r { background: #fde7e5; color: var(--red); } .badge.b { background: #e1eaf7; color: var(--blue); }
+  .live { display: flex; justify-content: space-between; align-items: center; background: linear-gradient(90deg,#fdecea,#fff); border: 2px solid #f5c2bc; border-left: 10px solid var(--red); border-radius: 20px; padding: 26px 32px; }
+  .dot { display: inline-block; width: 18px; height: 18px; border-radius: 50%; background: var(--red); margin-right: 12px; box-shadow: 0 0 0 8px rgba(198,40,40,.18); }
+  .doc { display: flex; gap: 20px; align-items: center; padding: 18px 22px; border: 1px solid var(--line); border-radius: 18px; background: #fff; }
+  .doc .di { font-size: 40px; }
+  .doc strong { font-size: 25px; display: block; } .doc small { font-size: 19px; color: var(--muted); }
+  .roles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px; margin-top: 50px; }
+  .role { background: rgba(255,255,255,.08); border: 2px solid rgba(255,255,255,.18); border-radius: 28px; padding: 42px 38px; }
+  .role .ri { font-size: 66px; } .role h3 { font-size: 40px; margin: 16px 0 12px; } .role p { font-size: 26px; color: #d7e9dd; line-height: 1.4; }
+  .grade { font-family: 'Fraunces', serif; font-size: 260px; line-height: 1; color: #fff; background: #23a35a; border-radius: 40px; padding: 30px 70px; box-shadow: 0 30px 80px rgba(0,0,0,.35); }
+  .center { text-align: center; align-items: center; justify-content: center; }
+  .demo { position: absolute; right: 60px; bottom: 40px; font-size: 20px; font-weight: 800; color: var(--muted); background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 8px 20px; }
+  .url-big { font-size: 54px; font-weight: 900; background: #fff; color: var(--g8); padding: 22px 46px; border-radius: 22px; display: inline-block; margin-top: 50px; }
+</style>
+</head>
+<body>
+
+<!-- 1. Titre -->
+<section class="scene dark col" data-s="1">
+  <div class="logo">
+    <svg viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#0f3d22"/><path d="M14 44V20l18 8 18-8v24l-18 8z" fill="#f4b942"/><path d="M32 28v24" stroke="#0f3d22" stroke-width="3"/></svg>
+    <span>Khoulé <span class="gold">Éducation</span></span>
+  </div>
+  <h1>La réussite scolaire,<br><span class="gold">ensemble.</span></h1>
+  <p class="lead" style="margin-top:40px">La plateforme de soutien scolaire de la communauté de Khoulé, de la CI à la Terminale.</p>
+</section>
+
+<!-- 2. Le constat -->
+<section class="scene dark col" data-s="2">
+  <div class="eyebrow">Le constat</div>
+  <h2>Des élèves qui ont besoin d’aide…<br><span class="gold">des ressortissants qui veulent aider.</span></h2>
+  <ul class="bullets">
+    <li><span class="ico">🎒</span><span>Des élèves de Khoulé manquent d’accompagnement après l’école.</span></li>
+    <li><span class="ico">🧑‍🏫</span><span>Enseignants, professeurs et étudiants originaires de Khoulé veulent transmettre — où qu’ils vivent.</span></li>
+    <li><span class="ico">🔗</span><span>Il manquait <b>un outil simple et sûr</b> pour les réunir.</span></li>
+  </ul>
+</section>
+
+<!-- 3. La solution -->
+<section class="scene dark col" data-s="3">
+  <div class="eyebrow">La solution</div>
+  <h2>Une plateforme, <span class="gold">trois espaces.</span></h2>
+  <div class="roles">
+    <div class="role"><div class="ri">🎒</div><h3>Élèves</h3><p>Cours de leur classe, devoirs, notes, questions, cours en direct.</p></div>
+    <div class="role"><div class="ri">🧑‍🏫</div><h3>Intervenants</h3><p>Cours, annales, exercices, corrections et visio en un clic.</p></div>
+    <div class="role"><div class="ri">🛡️</div><h3>Administration</h3><p>Validation des comptes, affectations, statistiques, modération.</p></div>
+  </div>
+</section>
+
+<!-- 4. Le site (capture réelle) -->
+<section class="scene light" data-s="4">
+  <div class="row">
+    <div class="col" style="width:560px">
+      <div class="eyebrow g">En ligne aujourd’hui</div>
+      <h2>Simple,<br>moderne,<br><span class="green">en français.</span></h2>
+      <p class="lead">Accessible sur ordinateur, tablette et téléphone.</p>
+    </div>
+    <div class="grow browser"><div class="bar"><i></i><i></i><i></i><div class="url">🔒 khoule-education.vercel.app</div></div><img src="shots/landing.png"></div>
+  </div>
+</section>
+
+<!-- 5. Inscription -->
+<section class="scene light" data-s="5">
+  <div class="row">
+    <div class="grow browser"><div class="bar"><i></i><i></i><i></i><div class="url">🔒 khoule-education.vercel.app/inscription</div></div><img src="shots/register.png"></div>
+    <div class="col" style="width:640px">
+      <div class="eyebrow g">Inscription</div>
+      <h2>En 2 minutes,<br><span class="green">en toute sécurité.</span></h2>
+      <ul class="bullets">
+        <li><span class="ico">👨‍👩‍👧</span><span>Parent ou tuteur et <b>accord parental</b></span></li>
+        <li><span class="ico">✅</span><span>Chaque compte <b>validé par l’administration</b></span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 6. Espace élève -->
+<section class="scene light col" data-s="6"><span class="demo">Exemple d’écran — données fictives</span>
+  <div class="eyebrow g">Espace élève</div>
+  <h2 style="font-size:60px">Bonjour Aïssatou 👋 <span class="green" style="font-size:40px">· Classe : Troisième</span></h2>
+  <div class="stats" style="margin:10px 0 30px">
+    <div class="stat"><span class="si" style="background:#e3f2e8">📚</span><div><div class="v">4</div><div class="l">Cours suivis</div></div></div>
+    <div class="stat"><span class="si" style="background:#fdf1d6">📝</span><div><div class="v">2</div><div class="l">Devoirs à rendre</div></div></div>
+    <div class="stat"><span class="si" style="background:#f8e3da">⭐</span><div><div class="v">14,5/20</div><div class="l">Moyenne</div></div></div>
+    <div class="stat"><span class="si" style="background:#e1eaf7">📅</span><div><div class="v">3</div><div class="l">Séances cette semaine</div></div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:26px">
+    <div class="card"><h3>Prochaines séances</h3>
+      <div class="sess"><div class="date">mar.<b>4</b>nov.</div><div class="grow"><strong style="font-size:24px">Mathématiques — Équations</strong><br><span style="color:#5f6d64;font-size:20px">🕘 17:30 – 19:00 · En ligne</span></div><span class="btn light">🎥 Lien visio</span></div>
+      <div class="sess"><div class="date">jeu.<b>6</b>nov.</div><div class="grow"><strong style="font-size:24px">Français — Le commentaire</strong><br><span style="color:#5f6d64;font-size:20px">🕘 18:00 – 19:30 · 📍 Salle 2</span></div></div>
+    </div>
+    <div class="card"><h3>Ma progression</h3>
+      <div style="font-size:22px;margin-bottom:8px"><b>Mathématiques 3e</b> · 6/8 leçons</div><div style="height:14px;background:#e3f2e8;border-radius:9px"><div style="width:75%;height:100%;background:linear-gradient(90deg,#1f7a4d,#f4b942);border-radius:9px"></div></div>
+      <div style="font-size:22px;margin:22px 0 8px"><b>Physique-Chimie 3e</b> · 3/7 leçons</div><div style="height:14px;background:#e3f2e8;border-radius:9px"><div style="width:43%;height:100%;background:linear-gradient(90deg,#1f7a4d,#f4b942);border-radius:9px"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7. Cours en direct -->
+<section class="scene light col" data-s="7"><span class="demo">Exemple d’écran — données fictives</span>
+  <div class="eyebrow g">Cours en direct</div>
+  <h2>La visio <span class="green">en un seul clic.</span></h2>
+  <p class="lead" style="margin-bottom:40px">L’intervenant clique sur « Démarrer » : toute la classe est prévenue et rejoint le cours.</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:34px">
+    <div class="ui"><div class="badge b" style="margin-bottom:18px">Côté intervenant</div>
+      <span class="btn red" style="font-size:30px">🔴 Démarrer un cours en direct</span>
+      <p style="font-size:22px;color:#5f6d64;margin-top:22px">Jitsi automatique ou Google Meet / Zoom · durée au choix · bouton « ⏹ Terminer le direct »</p></div>
+    <div class="ui"><div class="badge" style="margin-bottom:18px">Côté élève</div>
+      <div class="live"><div><strong style="font-size:26px"><span class="dot"></span>En direct : Révisions BFEM</strong><br><span style="font-size:20px;color:#5f6d64">Mathématiques · 3E · en cours</span></div><span class="btn red">🎥 Rejoindre</span></div></div>
+  </div>
+</section>
+
+<!-- 8. Devoirs -->
+<section class="scene light" data-s="8"><span class="demo">Exemple d’écran — données fictives</span>
+  <div class="row">
+    <div class="col" style="width:640px">
+      <div class="eyebrow g">Devoirs & corrections</div>
+      <h2>Rendre, corriger,<br><span class="green">progresser.</span></h2>
+      <ul class="bullets">
+        <li><span class="ico">📸</span><span>L’élève envoie sa copie : <b>texte, photo ou PDF</b></span></li>
+        <li><span class="ico">✍️</span><span>L’intervenant corrige et <b>note</b></span></li>
+        <li><span class="ico">🔔</span><span>L’élève est <b>notifié</b> aussitôt</span></li>
+      </ul>
+    </div>
+    <div class="grow ui">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><strong style="font-size:30px">📝 Exercice — Théorème de Thalès</strong><span class="badge" style="font-size:24px">Note : 17/20</span></div>
+      <div style="background:#f6f7f2;border-radius:16px;padding:22px;font-size:22px;margin-bottom:18px"><b style="font-size:18px;color:#5f6d64">MA COPIE</b><br>AB/AD = AC/AE donc… 📎 copie-aissatou.jpg</div>
+      <div style="background:#f2f8f4;border-left:6px solid #1f7a4d;border-radius:16px;padding:22px;font-size:22px"><b style="font-size:18px;color:#1f7a4d">✅ CORRECTION DE L’INTERVENANT</b><br>Très bon raisonnement ! Attention à bien citer les points alignés.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 9. Documents & annales -->
+<section class="scene light" data-s="9"><span class="demo">Exemple d’écran — données fictives</span>
+  <div class="row">
+    <div class="grow" style="display:grid;gap:18px">
+      <div class="doc"><span class="di">📜</span><div><strong>BFEM 2024 — Mathématiques</strong><small>Annale · 3E · M. Diaw</small></div></div>
+      <div class="doc"><span class="di">✅</span><div><strong>Corrigé BFEM 2024 — Mathématiques</strong><small>Corrigé · 3E · M. Diaw</small></div></div>
+      <div class="doc"><span class="di">🗒️</span><div><strong>Fiche — Les fonctions affines</strong><small>Fiche de révision · 3E</small></div></div>
+      <div class="doc"><span class="di">📜</span><div><strong>Bac S2 2023 — Physique-Chimie</strong><small>Annale · Terminale</small></div></div>
+    </div>
+    <div class="col" style="width:640px">
+      <div class="eyebrow g">Documents & annales</div>
+      <h2>Les annales<br><span class="green">à portée de main.</span></h2>
+      <p class="lead">BFEM, Bac, corrigés, fiches : les intervenants les déposent, les élèves de la classe les téléchargent.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 10. Administration -->
+<section class="scene light col" data-s="10"><span class="demo">Exemple d’écran — données fictives</span>
+  <div class="eyebrow g">Espace administrateur</div>
+  <h2>Tout piloter <span class="green">depuis un tableau de bord.</span></h2>
+  <div class="stats" style="margin:16px 0 30px">
+    <div class="stat"><span class="si" style="background:#e3f2e8">🎒</span><div><div class="v">120</div><div class="l">Élèves actifs</div></div></div>
+    <div class="stat"><span class="si" style="background:#e1eaf7">🧑‍🏫</span><div><div class="v">18</div><div class="l">Intervenants</div></div></div>
+    <div class="stat"><span class="si" style="background:#fdf1d6">📚</span><div><div class="v">32</div><div class="l">Cours publiés</div></div></div>
+    <div class="stat"><span class="si" style="background:#f8e3da">✅</span><div><div class="v">7</div><div class="l">Copies à corriger</div></div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px">
+    <div class="card"><div style="font-size:36px">✅</div><h3 style="margin:10px 0 4px">Valider les comptes</h3><span style="font-size:20px;color:#5f6d64">Élèves et intervenants</span></div>
+    <div class="card"><div style="font-size:36px">🧩</div><h3 style="margin:10px 0 4px">Affectations</h3><span style="font-size:20px;color:#5f6d64">Selon les disponibilités</span></div>
+    <div class="card"><div style="font-size:36px">📢</div><h3 style="margin:10px 0 4px">Annonces</h3><span style="font-size:20px;color:#5f6d64">Ciblées par classe</span></div>
+    <div class="card"><div style="font-size:36px">💾</div><h3 style="margin:10px 0 4px">Sauvegardes</h3><span style="font-size:20px;color:#5f6d64">En un clic</span></div>
+  </div>
+</section>
+
+<!-- 11. Sécurité -->
+<section class="scene dark" data-s="11">
+  <div class="row">
+    <div class="grow col">
+      <div class="eyebrow">Sécurité & protection des mineurs</div>
+      <h2>Conçue pour<br><span class="gold">protéger les enfants.</span></h2>
+      <ul class="bullets">
+        <li><span class="ico">🔒</span><span>Chaque élève ne voit <b>que ses propres données</b></span></li>
+        <li><span class="ico">🔐</span><span>Vérification en deux étapes, mots de passe piratés refusés</span></li>
+        <li><span class="ico">🚫</span><span>Pas de messages privés entre élèves</span></li>
+      </ul>
+    </div>
+    <div class="col center"><div class="grade">A+</div><p style="font-size:26px;margin-top:26px;color:#d7e9dd">Note de sécurité<br>securityheaders.com</p></div>
+  </div>
+</section>
+
+<!-- 12. Mobile -->
+<section class="scene light" data-s="12">
+  <div class="row">
+    <div class="col grow">
+      <div class="eyebrow g">Partout, tout le temps</div>
+      <h2>Pensée pour<br><span class="green">le téléphone.</span></h2>
+      <p class="lead">Les élèves suivent leurs cours, rendent leurs devoirs et rejoignent la visio depuis un simple smartphone.</p>
+      <ul class="bullets" style="margin-top:36px">
+        <li><span class="ico">📅</span><span>Cours <b>toute la semaine</b>, selon les disponibilités des intervenants</span></li>
+      </ul>
+    </div>
+    <div class="phone"><img src="shots/mobile.png"></div>
+  </div>
+</section>
+
+<!-- 13. Conclusion -->
+<section class="scene dark col center" data-s="13">
+  <div class="logo" style="justify-content:center">
+    <svg viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#0f3d22"/><path d="M14 44V20l18 8 18-8v24l-18 8z" fill="#f4b942"/><path d="M32 28v24" stroke="#0f3d22" stroke-width="3"/></svg>
+    <span>Khoulé <span class="gold">Éducation</span></span>
+  </div>
+  <h1>Ensemble, faisons réussir<br><span class="gold">les enfants de Khoulé.</span></h1>
+  <div class="url-big">khoule-education.vercel.app</div>
+</section>
+
+<script>
+  const s = new URLSearchParams(location.search).get('s') || '1';
+  document.querySelector(`[data-s="${s}"]`).classList.add('on');
+</script>
+</body>
+</html>
