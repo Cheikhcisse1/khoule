@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
         .eq('id', body.submission_id).single();
       // deno-lint-ignore no-explicit-any
       const a = (s as any)?.assignment;
-      if (!s || !a) throw new Fail('not_found', 404);
+      if (!s || !a?.course || !a.exercise) throw new Fail('not_found', 404);
       if (prof.role !== 'admin' && a.course.instructor_id !== me.user.id) throw new Fail('forbidden', 403);
       const left = await consume(admin, me.user.id, LIMIT_STAFF);
       refund = async () => { await admin.rpc('ai_refund', { p_user: me.user.id }); };
@@ -199,7 +199,9 @@ Deno.serve(async (req) => {
       const x = as as any;
       if (x) {
         thread = `assignment:${x.id}`;
-        ctx = `Contexte : classe ${x.course.class?.name}, matière ${x.course.subject?.name}, cours « ${x.course.title} ». Devoir en cours « ${x.exercise.title} » dont la consigne est :\n"""${String(x.exercise.instructions).slice(0, 4000)}"""`;
+        // L'exercice ou le cours peuvent être masqués par la RLS (exercice non publié…) : contexte partiel
+        if (x.course) ctx = `Contexte : classe ${x.course.class?.name}, matière ${x.course.subject?.name}, cours « ${x.course.title} ».`;
+        if (x.exercise) ctx += ` Devoir en cours « ${x.exercise.title} » dont la consigne est :\n"""${String(x.exercise.instructions).slice(0, 4000)}"""`;
       }
     } else if (typeof body.course_id === 'string') {
       const { data: c } = await caller.from('courses')
