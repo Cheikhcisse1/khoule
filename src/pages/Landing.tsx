@@ -29,7 +29,7 @@ export function Landing() {
       <section className="hero">
         <div className="hero-text">
           <p className="eyebrow">Soutien scolaire communautaire · Khoulé, Sénégal</p>
-          <h1>Ensemble, faisons réussir <span>les enfants de Khoulé</span>.</h1>
+          <h1>Ensemble, faisons réussir <span>nos enfants et notre jeunesse</span>.</h1>
           <p className="hero-lead">
             Tout au long de la semaine, des enseignants, professeurs et étudiants originaires de Khoulé
             accompagnent les élèves de la CI à la Terminale et les étudiants jusqu’au Master — en salle comme en ligne.
