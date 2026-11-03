@@ -287,7 +287,7 @@ textarea { resize: vertical; }
 .user-chip-text small { color: var(--muted); }
 .content { padding: 1.75rem 2rem; max-width: 1240px; width: 100%; margin: 0 auto; }
 
-.logo { display: inline-flex; align-items: center; gap: .55rem; }
+.logo { display: inline-flex; align-items: center; gap: .55rem; white-space: nowrap; }
 .logo-text { font-family: var(--display); font-weight: 800; font-size: 1.15rem; color: var(--ink); }
 .logo-text em { font-style: normal; font-weight: 600; color: var(--muted); }
 .logo-light .logo-text { color: #fff; }
@@ -315,7 +315,8 @@ textarea { resize: vertical; }
 .course-card-body { padding: .9rem 1rem; }
 .course-card-foot { padding: .6rem 1rem; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
 .course-hero { background: var(--accent); background-image: radial-gradient(circle at 92% 130%, rgba(255, 255, 255, .25) 0 110px, transparent 111px), radial-gradient(circle at 75% -40%, rgba(255, 255, 255, .14) 0 80px, transparent 81px); color: #fff; border-radius: var(--radius); padding: 1.5rem; display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
-.course-hero a { color: #fff; text-decoration: underline; }
+.course-hero a:not(.btn) { color: #fff; text-decoration: underline; }
+.course-hero .btn-secondary { background: #fff; color: var(--green-900); }
 .course-hero .badge { background: rgba(255, 255, 255, .18) !important; color: #fff !important; }
 .course-hero h1 { margin: .6rem 0 .3rem; }
 .tab-panel { min-height: 200px; }
