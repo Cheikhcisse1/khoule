@@ -8,13 +8,14 @@ import { COURSE_FORMAT, formatDate, fullName } from '../lib/format';
 import { KIND_CYCLES, SCHOOL_KINDS, SCHOOL_STATUS, STAFF_TITLES, covers, isHigher, loadMySchools, useMySchools } from '../lib/schools';
 import type { Announcement, Course, PersonName, SchoolProgram, SchoolStaff, Student } from '../lib/types';
 import { CourseCard } from '../components/CourseBits';
+import { ReportCardsButton } from '../components/ReportCards';
 import {
   Badge, Button, Card, ConfirmButton, Empty, ErrorBox, Field, Modal, PageHeader, RichText, Spinner, StatCard, Tabs, useAction,
 } from '../components/ui';
 
 type Tab = 'dash' | 'students' | 'programs' | 'courses' | 'grades' | 'news' | 'team';
 type SchoolStudent = Student & { profile: PersonName & { status: string } };
-interface GradeRow { student_id: string; score: number; max_score: number; course: { title: string } | null; assignment: { exercise: { title: string } | null } | null }
+interface GradeRow { student_id: string; score: number; max_score: number; course: { title: string; subject: { name: string } | null } | null; assignment: { exercise: { title: string } | null } | null }
 
 /**
  * Espace d'un responsable d'établissement (directeur, proviseur, responsable de filière).
@@ -88,7 +89,7 @@ function SchoolPanels({ st, tab, setTab, uid }: { st: SchoolStaff; tab: Tab; set
     const approved = list.filter((s) => s.school_status === 'approved').map((s) => s.profile_id);
     const grades = approved.length
       ? must(await supabase.from('grades')
-          .select('student_id, score, max_score, course:courses(title), assignment:assignments(exercise:exercises(title))')
+          .select('student_id, score, max_score, course:courses(title, subject:subjects(name)), assignment:assignments(exercise:exercises(title))')
           .in('student_id', approved)) as unknown as GradeRow[]
       : [];
     return { students: list, courses: courses as unknown as Course[], grades, programs: programs as SchoolProgram[] };
@@ -152,7 +153,11 @@ function SchoolPanels({ st, tab, setTab, uid }: { st: SchoolStaff; tab: Tab; set
   if (tab === 'grades') {
     return (
       <Card title="Notes des élèves" actions={approved.length > 0 && (
-        <Button variant="secondary" onClick={() => exportCsv(st, approved, data.grades, cls)}>Exporter (CSV)</Button>
+        <div className="row">
+          <ReportCardsButton schoolName={st.school?.name ?? ''} higher={higher} classes={myClasses}
+            programs={data.programs} students={approved} grades={data.grades} />
+          <Button variant="secondary" onClick={() => exportCsv(st, approved, data.grades, cls)}>Exporter (CSV)</Button>
+        </div>
       )}>
         {approved.length ? (
           <div className="table-wrap">

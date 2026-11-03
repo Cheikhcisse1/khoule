@@ -561,3 +561,35 @@ textarea { resize: vertical; }
 
 /* Bandeau hors connexion */
 .offline-banner { display: flex; align-items: center; gap: .5rem; justify-content: center; background: #3c4043; color: #fff; font-weight: 700; font-size: .9rem; padding: .5rem 1rem; }
+
+/* Bulletins de notes : invisibles à l'écran, une page A4 par élève à l'impression */
+.print-root { display: none; }
+@media print {
+  @page { size: A4; margin: 14mm; }
+  body { background: #fff; }
+  body > *:not(.print-root) { display: none !important; }
+  .print-root { display: block; color: #000; font-size: 11pt; }
+  .report-card { break-after: page; page-break-after: always; }
+  .report-card:last-child { break-after: auto; page-break-after: auto; }
+  .rc-head { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #188038; padding-bottom: 6pt; margin-bottom: 10pt; }
+  .rc-head > div { display: grid; }
+  .rc-school { font-size: 16pt; }
+  .rc-head span { color: #444; font-size: 9pt; }
+  .rc-title { text-align: right; }
+  .rc-title strong { font-size: 14pt; text-transform: uppercase; letter-spacing: .05em; color: #188038; }
+  .rc-id { display: grid; grid-template-columns: max-content 1fr max-content 1fr; gap: 3pt 10pt; margin: 0 0 10pt; }
+  .rc-id dt { font-weight: 700; color: #444; }
+  .rc-id dd { margin: 0; }
+  .rc-table { width: 100%; border-collapse: collapse; }
+  .rc-table th, .rc-table td { border: 1px solid #999; padding: 4pt 6pt; text-align: left; vertical-align: top; }
+  .rc-table th { background: #e6f4ea; font-size: 9pt; text-transform: uppercase; }
+  .rc-table .num { text-align: center; white-space: nowrap; }
+  .rc-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6pt; margin: 10pt 0; }
+  .rc-summary p { margin: 0; border: 1px solid #999; padding: 5pt; display: grid; text-align: center; }
+  .rc-summary span { font-size: 8.5pt; color: #444; }
+  .rc-summary strong { font-size: 12pt; }
+  .rc-sign { display: grid; grid-template-columns: 1fr 1fr; gap: 10pt; margin-top: 10pt; }
+  .rc-sign span { font-weight: 700; font-size: 9pt; }
+  .rc-box { border: 1px solid #999; height: 70pt; margin-top: 3pt; }
+  .rc-foot { margin-top: 10pt; font-size: 8pt; color: #666; text-align: center; }
+}
