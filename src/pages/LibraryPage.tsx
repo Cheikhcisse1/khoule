@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { useAuth } from '../auth/AuthProvider';
+import { useMySchools } from '../lib/schools';
 import { must, supabase } from '../lib/supabase';
 import { useLoad, useRefData } from '../lib/hooks';
 import { fileSize, formatDate, fullName } from '../lib/format';
@@ -48,6 +49,9 @@ export function LibraryPage() {
   const [uploading, setUploading] = useState(false);
   const { run } = useAction();
   const toast = useToast();
+  // Responsable d'établissement : il consulte les documents de son école, il n'en dépose pas
+  const { data: mySchools } = useMySchools(profile!.id);
+  const leader = !!mySchools?.length;
 
   const { data, error, loading, reload } = useLoad(async () => {
     const [docs, pairs] = await Promise.all([
@@ -90,10 +94,12 @@ export function LibraryPage() {
       <PageHeader title="Documents & annales"
         subtitle={role === 'student'
           ? 'Annales, corrigés, fiches et exercices déposés par les intervenants pour votre classe.'
+          : role === 'admin' ? 'Tous les documents de la plateforme, toutes classes confondues.'
+          : leader ? 'Documents des classes de votre établissement.'
           : 'Déposez des annales, corrigés, fiches et exercices pour les classes qui vous sont affectées.'}
         actions={canUpload && <Button onClick={() => setUploading(true)}>📤 Déposer un document</Button>} />
 
-      {role === 'instructor' && !canUpload && (
+      {role === 'instructor' && !canUpload && !leader && (
         <div className="alert alert-info">Vous pourrez déposer des documents dès que l’administration vous aura affecté une classe et une matière.</div>
       )}
 
@@ -102,12 +108,13 @@ export function LibraryPage() {
         {role !== 'student' && (
           <select value={classId} onChange={(e) => setClassId(e.target.value)} aria-label="Classe">
             <option value="">Toutes les classes</option>
-            {ref.classes.map((c) => <option key={c.id} value={c.id}>{c.code} — {c.name}</option>)}
+            {ref.classes.filter((c) => role === 'admin' || data.docs.some((d) => d.class_id === c.id))
+              .map((c) => <option key={c.id} value={c.id}>{c.code} — {c.name}</option>)}
           </select>
         )}
         <select value={subjectId} onChange={(e) => setSubjectId(e.target.value)} aria-label="Matière">
           <option value="">Toutes les matières</option>
-          {ref.subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          {ref.subjects.filter((s) => data.docs.some((d) => d.subject_id === s.id)).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
         <select value={kind} onChange={(e) => setKind(e.target.value)} aria-label="Type">
           <option value="">Tous les types</option>
