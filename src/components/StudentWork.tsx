@@ -54,6 +54,7 @@ export function WorkCard({ work, userId, onChange, showCourse = true }:
 
       {!locked && (
         <div className="work-actions">
+          <Link className="btn btn-ghost" to={`/assistant?devoir=${a.id}`}>🤖 Coup de pouce</Link>
           {closed && !submission ? (
             <span className="muted small">La date limite est dépassée.</span>
           ) : (

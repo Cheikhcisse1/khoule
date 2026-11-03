@@ -347,7 +347,7 @@ textarea { resize: vertical; }
 .work-details summary { cursor: pointer; font-weight: 700; font-size: .9rem; color: var(--green-800); }
 .work-block { background: var(--bg); border-radius: 10px; padding: .75rem; display: grid; gap: .3rem; }
 .work-block.correction { background: var(--green-50); border-left: 4px solid var(--green-700); }
-.work-actions { display: flex; justify-content: flex-end; }
+.work-actions { display: flex; justify-content: flex-end; gap: .5rem; flex-wrap: wrap; }
 .assignment-line { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; background: var(--gold-100); border-radius: 10px; padding: .5rem .75rem; justify-content: space-between; }
 
 .sessions { list-style: none; padding: 0; margin: 0; display: grid; gap: .6rem; }
@@ -475,3 +475,10 @@ textarea { resize: vertical; }
   .stat { flex-direction: column; align-items: flex-start; gap: .4rem; }
   .barlist li { grid-template-columns: 70px 1fr 32px; }
 }
+
+/* Assistant IA (Coup de pouce, assistant pédagogique, pré-correction Stylo Rouge) */
+.ai-suggest { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: center; margin-top: .6rem; max-width: 640px; }
+.ai-suggest .chip { white-space: normal; text-align: left; }
+.bubble.ai { border-color: var(--blue); background: var(--blue-100); }
+.chat-input textarea { flex: 1; resize: vertical; min-height: 2.6rem; font: inherit; padding: .5rem .7rem; border: 1px solid var(--line); border-radius: 10px; }
+.ai-box { border: 1px dashed var(--blue); background: var(--blue-100); border-radius: 10px; padding: .6rem .8rem; display: grid; gap: .4rem; }

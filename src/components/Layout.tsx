@@ -15,6 +15,7 @@ const NAV: Record<Role, NavEntry[]> = {
     { to: '/eleve', label: 'Accueil', icon: '🏠', end: true },
     { to: '/eleve/cours', label: 'Mes cours', icon: '📚' },
     { to: '/eleve/devoirs', label: 'Devoirs', icon: '📝' },
+    { to: '/assistant', label: 'Coup de pouce (IA)', icon: '🤖' },
     { to: '/eleve/notes', label: 'Notes & progression', icon: '📈' },
     { to: '/documents', label: 'Documents & annales', icon: '📚' },
     { to: '/calendrier', label: 'Calendrier', icon: '📅' },
@@ -27,6 +28,7 @@ const NAV: Record<Role, NavEntry[]> = {
     { to: '/intervenant/cours', label: 'Mes cours', icon: '📚' },
     { to: '/documents', label: 'Documents & annales', icon: '📤' },
     { to: '/intervenant/corrections', label: 'Corrections', icon: '✅' },
+    { to: '/assistant', label: 'Assistant IA', icon: '🤖' },
     { to: '/calendrier', label: 'Calendrier', icon: '📅' },
     { to: '/questions', label: 'Questions', icon: '❓' },
     { to: '/messages', label: 'Messages', icon: '💬' },
@@ -45,6 +47,7 @@ const NAV: Record<Role, NavEntry[]> = {
     { to: '/calendrier', label: 'Calendrier', icon: '📅' },
     { to: '/questions', label: 'Questions', icon: '❓', section: 'Contrôle' },
     { to: '/admin/moderation', label: 'Modération', icon: '🛡️' },
+    { to: '/assistant', label: 'Assistant IA', icon: '🤖' },
     { to: '/recherche', label: 'Recherche', icon: '🔍' },
   ],
 };

@@ -8,6 +8,7 @@ import { formatDateTime, fullName, score } from '../../lib/format';
 import type { Correction, Grade, PersonName, Submission } from '../../lib/types';
 import { Badge, Button, Card, Empty, ErrorBox, Field, Modal, PageHeader, RichText, Spinner, Tabs, useAction } from '../../components/ui';
 import { FileLinks, FilePicker } from '../../components/Files';
+import { correctionText, preCorrect } from '../../lib/ai';
 
 interface Row extends Submission {
   student: PersonName;
@@ -85,7 +86,19 @@ function GradeModal({ row, userId, onClose, onSaved }: { row: Row; userId: strin
   const [files, setFiles] = useState<File[]>([]);
   const { busy, run } = useAction();
 
+  const [aiNote, setAiNote] = useState<string | null>(null);
+  const ai = useAction();
+
   const fb = feedback ?? data?.correction?.feedback ?? '';
+  // Pré-correction Stylo Rouge : remplit la note et les commentaires, l'intervenant relit avant d'enregistrer.
+  const runAi = () => void ai.run(async () => {
+    const r = await preCorrect(row.id);
+    const n = Math.min(max, Math.max(0, Math.round(Number(r.result.note) * 2) / 2));
+    setValue(String(n));
+    setFeedback(correctionText(r.result));
+    setAiNote(`Proposition de Stylo Rouge (confiance ${r.result.confiance ?? 'moyenne'}) : relisez et ajustez avant d'enregistrer.`
+      + (r.skipped_files ? ` ${r.skipped_files} fichier(s) non lu(s) par l'IA (PDF ou trop lourd) : vérifiez-les vous-même.` : ''));
+  });
   const sc = value ?? (data?.grade ? String(data.grade.score) : '');
 
   const save = (e: FormEvent) => {
@@ -117,6 +130,10 @@ function GradeModal({ row, userId, onClose, onSaved }: { row: Row; userId: strin
             <details><summary className="small">Consignes</summary><RichText text={row.assignment.exercise.instructions} /></details>
           </section>
           <form className="form" onSubmit={save}>
+            <div className="ai-box">
+              <Button type="button" variant="secondary" loading={ai.busy} onClick={runAi}>🖍️ Pré-corriger avec Stylo Rouge</Button>
+              <span className="small muted">{aiNote ?? 'L’IA lit la consigne, le texte et les photos de la copie, puis propose une note et des commentaires. Rien n’est envoyé à l’élève sans votre validation.'}</span>
+            </div>
             <Field label={`Note sur ${max}`} required>
               <input inputMode="decimal" value={sc} onChange={(e) => setValue(e.target.value)} required placeholder={`0 – ${max}`} />
             </Field>

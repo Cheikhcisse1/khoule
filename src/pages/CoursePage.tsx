@@ -77,6 +77,7 @@ export function CoursePage() {
           <h1>{course.title}</h1>
           <p>🧑‍🏫 <Link to={`/intervenants/${course.instructor_id}`}>{fullName(course.instructor)}</Link></p>
         </div>
+        {(enrolled || manage) && <Link className="btn btn-secondary" to={`/assistant?cours=${course.id}`}>{profile!.role === 'student' ? '🤖 Coup de pouce' : '🤖 Assistant IA'}</Link>}
         {manage && <LiveNowButton courseId={course.id} label="🔴 Démarrer le direct" onStarted={() => setLiveKey((k) => k + 1)} />}
         {profile!.role === 'student' && (
           enrolled
