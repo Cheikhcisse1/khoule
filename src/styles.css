@@ -604,6 +604,7 @@ textarea { resize: vertical; }
 .tt-slot { display: grid; gap: .05rem; padding: .45rem .55rem; border-radius: 8px; border-left: 4px solid var(--accent);
   background: color-mix(in srgb, var(--accent) 10%, #fff); color: var(--ink); text-decoration: none !important; font-size: .85rem; }
 .tt-slot:hover { box-shadow: var(--shadow-hover); }
+button.tt-slot { border-top: 0; border-right: 0; border-bottom: 0; font: inherit; text-align: left; cursor: pointer; width: 100%; }
 .tt-slot small { color: var(--muted); }
 .tt-slot.cancelled { opacity: .5; text-decoration: line-through !important; }
 @media (max-width: 1024px) { .timetable { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

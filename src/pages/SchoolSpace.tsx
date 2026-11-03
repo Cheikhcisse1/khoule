@@ -156,7 +156,7 @@ function SchoolPanels({ st, tab, setTab, uid }: { st: SchoolStaff; tab: Tab; set
 
   if (tab === 'students') return <><StudentsPanel st={st} students={data.students} cls={cls} programs={data.programs} onChange={reload} onFollow={setFollow} />{followModal}</>;
 
-  if (tab === 'planning') return <PlanningPanel courses={data.courses} myClasses={myClasses} programs={data.programs} />;
+  if (tab === 'planning') return <PlanningPanel courses={data.courses} myClasses={myClasses} programs={data.programs} canEdit />;
 
   if (tab === 'roll') return <RollPanel st={st} students={approved} myClasses={myClasses} programs={data.programs} courses={data.courses} />;
 

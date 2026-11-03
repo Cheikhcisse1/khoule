@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthProvider';
 import { must, supabase } from '../../lib/supabase';
 import { useLoad } from '../../lib/hooks';
-import { formatDate, formatTime, fullName } from '../../lib/format';
+import { formatDate, fullName } from '../../lib/format';
 import { STAFF_TITLES, isHigher } from '../../lib/schools';
 import type { Course, PersonName, SchoolProgram, SchoolStaff, Student } from '../../lib/types';
 import { PrintSheet } from '../../components/ReportCards';
@@ -28,68 +28,185 @@ interface Sheet { id: string; class_id: number; program_id: string | null; cours
 
 const DAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 export const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-const monday = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
 const on20 = (g: StudentGrade) => (Number(g.score) / Number(g.max_score)) * 20;
 const fmt20 = (v: number | null) => (v == null ? '—' : `${(Math.round(v * 10) / 10).toString().replace('.', ',')}/20`);
 
 // ---------------------------------------------------------------------------
-// Planning : emploi du temps de la semaine, construit à partir des séances des cours de l'école
+// Planning : emploi du temps de la semaine, construit à partir des séances des cours.
+// La direction (canEdit) y place les créneaux de chaque professeur ; le professeur les voit dans son menu Planning.
+// Heures en heure de Dakar (UTC+0, sans changement d'heure) : les dates sont manipulées en UTC.
 interface PlannedSession {
   id: string; title: string; starts_at: string; ends_at: string; room: string | null; status: string;
-  course: { id: string; title: string; class_id: number; program_id: string | null; subject: { name: string; color: string | null } | null } | null;
+  course: { id: string; title: string; class_id: number; program_id: string | null; instructor_id: string; subject: { name: string; color: string | null } | null } | null;
 }
+const DAY_MS = 86400000;
+const mondayUtc = (d: Date) => { const x = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()); return new Date(x - ((new Date(x).getUTCDay() + 6) % 7) * DAY_MS); };
+const dayKey = (d: Date | string) => new Date(d).toISOString().slice(0, 10);
+const hhmm = (d: string) => new Date(d).toISOString().slice(11, 16);
 
-export function PlanningPanel({ courses, myClasses, programs }: { courses: Course[]; myClasses: ClassRef[]; programs: SchoolProgram[] }) {
-  const [start, setStart] = useState(() => monday(new Date()));
+export function PlanningPanel({ courses, myClasses, programs, canEdit = false }:
+  { courses: Course[]; myClasses: ClassRef[]; programs: SchoolProgram[]; canEdit?: boolean }) {
+  const [start, setStart] = useState(() => mondayUtc(new Date()));
   const [classId, setClassId] = useState('');
-  const end = new Date(start); end.setDate(end.getDate() + 7);
+  const [teacherId, setTeacherId] = useState('');
+  const [editing, setEditing] = useState<PlannedSession | 'new' | null>(null);
+  const end = new Date(start.getTime() + 7 * DAY_MS);
   const ids = courses.map((c) => c.id);
   const { data, error, loading, reload } = useLoad(async () => (ids.length
     ? must(await supabase.from('course_sessions')
-        .select('id, title, starts_at, ends_at, room, status, course:courses(id, title, class_id, program_id, subject:subjects(name,color))')
+        .select('id, title, starts_at, ends_at, room, status, course:courses(id, title, class_id, program_id, instructor_id, subject:subjects(name,color))')
         .in('course_id', ids).gte('starts_at', start.toISOString()).lt('starts_at', end.toISOString()).order('starts_at')) as unknown as PlannedSession[]
     : []), [start.getTime(), ids.join(',')]);
 
-  const move = (days: number) => { const d = new Date(start); d.setDate(d.getDate() + days); setStart(d); };
-  const list = (data ?? []).filter((s) => !classId || String(s.course?.class_id) === classId);
+  // Professeurs des cours de l'établissement
+  const teachers = [...new Map(courses.map((c) => [c.instructor_id, c.instructor])).entries()]
+    .map(([id, person]) => ({ id, name: fullName(person) })).sort((a, b) => a.name.localeCompare(b.name));
+  const list = (data ?? []).filter((x) => (!classId || String(x.course?.class_id) === classId) && (!teacherId || x.course?.instructor_id === teacherId));
   const className = (id?: number) => myClasses.find((c) => c.id === id)?.code ?? '';
+  const teacherName = (id?: string) => teachers.find((t) => t.id === id)?.name ?? '';
 
   return (
     <>
       <div className="toolbar">
         <div className="row">
-          <Button variant="ghost" onClick={() => move(-7)}>← Semaine précédente</Button>
+          <Button variant="ghost" onClick={() => setStart(new Date(start.getTime() - 7 * DAY_MS))}>← Semaine précédente</Button>
           <strong>Semaine du {formatDate(start)}</strong>
-          <Button variant="ghost" onClick={() => move(7)}>Semaine suivante →</Button>
+          <Button variant="ghost" onClick={() => setStart(new Date(start.getTime() + 7 * DAY_MS))}>Semaine suivante →</Button>
         </div>
         <select value={classId} onChange={(e) => setClassId(e.target.value)} aria-label="Classe">
           <option value="">Toutes les classes</option>
           {myClasses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
+        {canEdit && teachers.length > 1 && (
+          <select value={teacherId} onChange={(e) => setTeacherId(e.target.value)} aria-label="Professeur">
+            <option value="">Tous les professeurs</option>
+            {teachers.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+        )}
+        {canEdit && <Button onClick={() => setEditing('new')} disabled={!courses.length}>+ Ajouter un créneau</Button>}
       </div>
       {loading ? <Spinner /> : error ? <ErrorBox error={error} onRetry={reload} /> : (
         <div className="timetable">
           {DAYS.map((day, i) => {
-            const d = new Date(start); d.setDate(d.getDate() + i);
-            const items = list.filter((s) => iso(new Date(s.starts_at)) === iso(d));
+            const d = new Date(start.getTime() + i * DAY_MS);
+            const items = list.filter((x) => dayKey(x.starts_at) === dayKey(d));
             return (
-              <section key={day} className={`tt-day ${iso(d) === iso(new Date()) ? 'today' : ''}`}>
-                <h3>{day} <span className="muted small">{d.getDate()}/{d.getMonth() + 1}</span></h3>
-                {items.length ? items.map((s) => (
-                  <Link key={s.id} to={`/cours/${s.course?.id}`} className={`tt-slot ${s.status === 'cancelled' ? 'cancelled' : ''}`}
-                    style={{ ['--accent' as string]: s.course?.subject?.color ?? '#188038' }}>
-                    <strong>{formatTime(s.starts_at)}–{formatTime(s.ends_at)}</strong>
-                    <span>{s.course?.subject?.name ?? s.course?.title}</span>
-                    <small>{className(s.course?.class_id)}{s.course?.program_id ? ` · ${programs.find((p) => p.id === s.course?.program_id)?.name ?? ''}` : ''}{s.room ? ` · ${s.room}` : ''}</small>
-                  </Link>
-                )) : <p className="muted small">—</p>}
+              <section key={day} className={`tt-day ${dayKey(d) === dayKey(new Date()) ? 'today' : ''}`}>
+                <h3>{day} <span className="muted small">{d.getUTCDate()}/{d.getUTCMonth() + 1}</span></h3>
+                {items.length ? items.map((x) => {
+                  const body = (
+                    <>
+                      <strong>{hhmm(x.starts_at)}–{hhmm(x.ends_at)}</strong>
+                      <span>{x.course?.subject?.name ?? x.course?.title}</span>
+                      <small>{className(x.course?.class_id)}{x.course?.program_id ? ` · ${programs.find((pr) => pr.id === x.course?.program_id)?.name ?? ''}` : ''}{x.room ? ` · ${x.room}` : ''}</small>
+                      {canEdit && <small>{teacherName(x.course?.instructor_id)}</small>}
+                    </>
+                  );
+                  const props = { className: `tt-slot ${x.status === 'cancelled' ? 'cancelled' : ''}`, style: { ['--accent' as string]: x.course?.subject?.color ?? '#188038' } };
+                  return canEdit
+                    ? <button key={x.id} type="button" {...props} onClick={() => setEditing(x)} title="Modifier ce créneau">{body}</button>
+                    : <Link key={x.id} to={`/cours/${x.course?.id}`} {...props}>{body}</Link>;
+                }) : <p className="muted small">—</p>}
               </section>
             );
           })}
         </div>
       )}
-      <p className="small muted">Le planning reprend les séances programmées dans les cours de l’établissement (onglet « Séances » de chaque cours).</p>
+      <p className="small muted">{canEdit
+        ? 'Ajoutez les créneaux de chaque professeur : ils apparaissent dans son planning et celui des élèves du cours. Touchez un créneau pour le modifier.'
+        : 'Votre planning est préparé par la direction de l’établissement et par vous-même (onglet « Séances » de chaque cours).'}</p>
+      {editing && (
+        <SlotModal slot={editing === 'new' ? null : editing} courses={courses} teachers={teachers} defaultDay={dayKey(start)}
+          onClose={() => setEditing(null)} onSaved={reload} />
+      )}
     </>
+  );
+}
+
+function SlotModal({ slot, courses, teachers, defaultDay, onClose, onSaved }: {
+  slot: PlannedSession | null; courses: Course[]; teachers: { id: string; name: string }[]; defaultDay: string;
+  onClose: () => void; onSaved: () => Promise<void>;
+}) {
+  const [f, setF] = useState({
+    teacher: slot?.course?.instructor_id ?? teachers[0]?.id ?? '', course_id: slot?.course?.id ?? '',
+    day: slot ? dayKey(slot.starts_at) : defaultDay, from: slot ? hhmm(slot.starts_at) : '08:00', to: slot ? hhmm(slot.ends_at) : '10:00',
+    room: slot?.room ?? '', weeks: '1', cancelled: slot?.status === 'cancelled',
+  });
+  const { busy, run } = useAction();
+  const del = useAction();
+  const mine = courses.filter((c) => c.instructor_id === f.teacher);
+  const course = courses.find((c) => c.id === f.course_id);
+  const at = (day: string, t: string) => `${day}T${t}:00Z`;
+
+  const save = (e: FormEvent) => {
+    e.preventDefault();
+    void run(async () => {
+      if (!course) throw new Error('Choisissez le cours.');
+      if (f.to <= f.from) throw new Error('L’heure de fin doit être après l’heure de début.');
+      if (slot) {
+        must(await supabase.from('course_sessions').update({
+          starts_at: at(f.day, f.from), ends_at: at(f.day, f.to), room: f.room.trim() || null,
+          status: f.cancelled ? 'cancelled' : 'scheduled',
+        }).eq('id', slot.id));
+      } else {
+        const n = Math.min(Math.max(Number(f.weeks) || 1, 1), 20);
+        const base = new Date(`${f.day}T00:00:00Z`).getTime();
+        must(await supabase.from('course_sessions').insert(Array.from({ length: n }, (_, i) => {
+          const day = dayKey(new Date(base + i * 7 * DAY_MS));
+          return { course_id: course.id, title: course.title, starts_at: at(day, f.from), ends_at: at(day, f.to), room: f.room.trim() || null, status: 'scheduled' };
+        })));
+      }
+      onClose(); await onSaved();
+    }, slot ? 'Créneau modifié.' : 'Créneau ajouté au planning du professeur.');
+  };
+
+  return (
+    <Modal open onClose={onClose} title={slot ? 'Modifier le créneau' : 'Ajouter un créneau'}>
+      <form className="form" onSubmit={save}>
+        {!slot && (
+          <div className="grid-2">
+            <Field label="Professeur" required>
+              <select value={f.teacher} onChange={(e) => setF({ ...f, teacher: e.target.value, course_id: '' })} required>
+                {teachers.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+            </Field>
+            <Field label="Cours" required>
+              <select value={f.course_id} onChange={(e) => setF({ ...f, course_id: e.target.value })} required>
+                <option value="">Choisir…</option>
+                {mine.map((c) => <option key={c.id} value={c.id}>{c.title} · {c.class?.code}</option>)}
+              </select>
+            </Field>
+          </div>
+        )}
+        {slot && <p><strong>{slot.course?.title}</strong> · {teachers.find((t) => t.id === slot.course?.instructor_id)?.name}</p>}
+        <div className="grid-2">
+          <Field label={slot ? 'Date' : 'Première date'} required><input type="date" value={f.day} onChange={(e) => setF({ ...f, day: e.target.value })} required /></Field>
+          <Field label="Salle"><input value={f.room} onChange={(e) => setF({ ...f, room: e.target.value })} placeholder="Ex. : Salle 3, Amphi A" /></Field>
+          <Field label="Début" required><input type="time" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} required /></Field>
+          <Field label="Fin" required><input type="time" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} required /></Field>
+          {!slot && (
+            <Field label="Répéter chaque semaine" hint="Nombre de semaines (1 = une seule fois, 20 au plus)">
+              <input type="number" min={1} max={20} value={f.weeks} onChange={(e) => setF({ ...f, weeks: e.target.value })} />
+            </Field>
+          )}
+        </div>
+        {slot && (
+          <label className="check"><input type="checkbox" checked={f.cancelled} onChange={(e) => setF({ ...f, cancelled: e.target.checked })} />
+            <span>Séance annulée (reste visible, barrée)</span></label>
+        )}
+        <p className="small muted">Heure de Dakar. Le professeur est prévenu par une notification.</p>
+        <div className="modal-actions">
+          {slot && (
+            <ConfirmButton variant="ghost" message="Supprimer ce créneau ?" onConfirm={() => void del.run(async () => {
+              must(await supabase.from('course_sessions').delete().eq('id', slot.id)); onClose(); await onSaved();
+            }, 'Créneau supprimé.')}>Supprimer</ConfirmButton>
+          )}
+          {slot && <Link className="btn btn-ghost" to={`/cours/${slot.course?.id}`}>Ouvrir le cours</Link>}
+          <Button type="button" variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button type="submit" loading={busy}>{slot ? 'Enregistrer' : 'Ajouter'}</Button>
+        </div>
+      </form>
+    </Modal>
   );
 }
 
