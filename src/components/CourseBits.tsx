@@ -16,7 +16,7 @@ export function CourseCard({ course, footer }: { course: Course; footer?: ReactN
         <div className="course-card-body">
           <h3>{course.title}</h3>
           {course.description && <p className="clamp-2 muted">{course.description}</p>}
-          <p className="small">🧑‍🏫 {fullName(course.instructor)}{course.school ? ` · 🏫 ${course.school.name}` : ''}</p>
+          <p className="small">🧑‍🏫 {fullName(course.instructor)}{course.school ? ` · 🏫 ${course.school.name}` : ''}{course.program ? ` · ${course.program.name}` : ''}</p>
         </div>
       </Link>
       {(footer || course.status !== 'published') && (

@@ -78,6 +78,7 @@ export function CoursePage() {
             <Badge>{course.class?.name}</Badge>
             {course.format && course.format !== 'cours' && <Badge tone="info">{COURSE_FORMAT[course.format]}</Badge>}
             {course.school && <Badge tone="warning">🏫 {course.school.name}</Badge>}
+            {course.program && <Badge tone="info">🧭 {course.program.name}</Badge>}
             {course.status !== 'published' && <Badge tone="warning">{COURSE_STATUS[course.status]}</Badge>}
           </div>
           <h1>{course.title}</h1>

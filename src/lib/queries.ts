@@ -2,7 +2,7 @@ import { must, supabase } from './supabase';
 import type { Assignment, Correction, Course, CourseSession, Grade, Submission } from './types';
 
 export const COURSE_SELECT =
-  '*, subject:subjects(name,color), class:classes(code,name), instructor:profiles(first_name,last_name), school:schools(name)';
+  '*, subject:subjects(name,color), class:classes(code,name), instructor:profiles(first_name,last_name), school:schools(name), program:school_programs(name)';
 
 export const SESSION_SELECT =
   '*, course:courses(id,title, subject:subjects(name,color), class:classes(code))';

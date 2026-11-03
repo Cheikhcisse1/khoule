@@ -96,6 +96,8 @@ export interface Course {
   format: 'cours' | 'td' | 'tp';
   school_id: string | null;
   school?: Pick<School, 'name'> | null;
+  program_id: string | null;
+  program?: Pick<SchoolProgram, 'name'> | null;
   published_at: string | null;
   created_at: string;
   subject?: Pick<Subject, 'name' | 'color'>;

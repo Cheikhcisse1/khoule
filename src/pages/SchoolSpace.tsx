@@ -493,6 +493,7 @@ function TeamPanel({ st }: { st: SchoolStaff }) {
   const toggle = (id: number) => setF((s) => ({ ...s, classes: s.classes.includes(id) ? s.classes.filter((x) => x !== id) : [...s.classes, id] }));
 
   return (
+    <>
     <div className="split">
       <Card title="Équipe de direction">
         <ul className="list">
@@ -529,6 +530,57 @@ function TeamPanel({ st }: { st: SchoolStaff }) {
           </fieldset>
           <Button type="submit" loading={busy}>Nommer</Button>
           <p className="small muted">Il ou elle verra uniquement les élèves, cours, notes et annonces de ces classes.</p>
+        </form>
+      </Card>
+    </div>
+    {isHigher(st.school?.kind) && <TeachersPanel st={st} />}
+    </>
+  );
+}
+
+/** Professeurs de l'université : ils créent eux-mêmes leurs cours, TD et TP pour l'établissement et ses filières. */
+function TeachersPanel({ st }: { st: SchoolStaff }) {
+  const [email, setEmail] = useState('');
+  const { busy, run } = useAction();
+  const { data, error, loading, reload } = useLoad(async () =>
+    must(await supabase.from('school_teachers').select('user_id, profile:profiles(first_name,last_name)')
+      .eq('school_id', st.school_id)) as unknown as { user_id: string; profile: PersonName }[], [st.school_id]);
+
+  if (loading) return <Spinner />;
+  if (error || !data) return <ErrorBox error={error ?? ''} onRetry={reload} />;
+
+  const add = (e: FormEvent) => {
+    e.preventDefault();
+    void run(async () => {
+      must(await supabase.rpc('school_add_teacher', { p_school: st.school_id, p_email: email }));
+      setEmail('');
+      await reload();
+    }, 'Professeur ajouté : il peut créer ses cours pour l’établissement.');
+  };
+
+  return (
+    <div className="split" style={{ marginTop: '1rem' }}>
+      <Card title="Professeurs de l’établissement">
+        {data.length ? (
+          <ul className="list">
+            {data.map((t) => (
+              <li key={t.user_id} className="list-row">
+                <strong>{fullName(t.profile)}</strong>
+                <ConfirmButton variant="ghost" message="Retirer ce professeur ? Ses cours déjà créés restent en place." onConfirm={() => void run(async () => {
+                  must(await supabase.rpc('school_remove_teacher', { p_school: st.school_id, p_user: t.user_id })); await reload();
+                }, 'Professeur retiré.')}>Retirer</ConfirmButton>
+              </li>
+            ))}
+          </ul>
+        ) : <Empty icon="🧑‍🏫" title="Aucun professeur inscrit" />}
+      </Card>
+      <Card title="Ajouter un professeur">
+        <form className="form" onSubmit={add}>
+          <Field label="E-mail de son compte Khoulé" required hint="Le professeur doit avoir un compte intervenant validé">
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </Field>
+          <Button type="submit" loading={busy}>Ajouter</Button>
+          <p className="small muted">Il crée ensuite ses cours, TD et TP pour votre établissement et choisit la filière.</p>
         </form>
       </Card>
     </div>
