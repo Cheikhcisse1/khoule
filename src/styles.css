@@ -542,7 +542,19 @@ textarea { resize: vertical; }
 
 /* Pied de page : réseaux sociaux */
 .social { display: flex; flex-wrap: wrap; gap: .5rem; }
-.social .chip { color: #fff; background: transparent; border-color: rgba(255, 255, 255, .35); text-decoration: none; font-weight: 700; }
-.social .chip:hover { background: rgba(255, 255, 255, .12); }
+.social { gap: .75rem; }
+/* Icônes rondes : apparition en cascade, léger flottement, couleur de la marque au survol */
+.social-link { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; color: #fff;
+  border: 1px solid rgba(255, 255, 255, .25); background: rgba(255, 255, 255, .06); text-decoration: none !important;
+  transition: background .25s, border-color .25s, transform .25s, box-shadow .25s;
+  animation: social-in .6s cubic-bezier(.2, .8, .2, 1.2) backwards, social-float 3.2s ease-in-out infinite;
+  animation-delay: calc(var(--i) * .12s), calc(.8s + var(--i) * .4s); }
+.social-link svg { transition: transform .35s cubic-bezier(.2, .8, .2, 1.4); }
+.social-link:hover, .social-link:focus-visible { background: var(--brand); border-color: var(--brand); transform: translateY(-4px) scale(1.08);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--brand) 55%, transparent); animation-play-state: paused; }
+.social-link:hover svg, .social-link:focus-visible svg { transform: rotate(-10deg) scale(1.12); }
+@keyframes social-in { from { opacity: 0; transform: translateY(14px) scale(.6); } }
+@keyframes social-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -3px; } }
+@media (prefers-reduced-motion: reduce) { .social-link, .social-link svg { animation: none; transition: none; } }
 .landing-foot .logo-text { color: #fff; }
 .landing-foot .logo-text em { color: #bdc1c6; }
