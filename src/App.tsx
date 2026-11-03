@@ -44,6 +44,8 @@ const LibraryPage = lazy(() => import('./pages/LibraryPage').then((m) => ({ defa
 const AssistantPage = lazy(() => import('./pages/AssistantPage').then((m) => ({ default: m.AssistantPage })));
 const SchoolSpace = lazy(() => import('./pages/SchoolSpace').then((m) => ({ default: m.SchoolSpace })));
 const AdminSchools = lazy(() => import('./pages/admin/AdminSchools').then((m) => ({ default: m.AdminSchools })));
+const InstructorRoll = lazy(() => import('./pages/instructor/VieClasse').then((m) => ({ default: m.InstructorRoll })));
+const InstructorPlanning = lazy(() => import('./pages/instructor/VieClasse').then((m) => ({ default: m.InstructorPlanning })));
 
 function Home() {
   const { session, profile, loading } = useAuth();
@@ -84,6 +86,8 @@ export default function App() {
         {/* Intervenant */}
         <Route path="/intervenant" element={<RequireRole roles={['instructor']}><InstructorDashboard /></RequireRole>} />
         <Route path="/intervenant/cours" element={<RequireRole roles={['instructor']}><InstructorCourses /></RequireRole>} />
+        <Route path="/intervenant/appel" element={<RequireRole roles={['instructor']}><InstructorRoll /></RequireRole>} />
+        <Route path="/intervenant/planning" element={<RequireRole roles={['instructor']}><InstructorPlanning /></RequireRole>} />
         <Route path="/intervenant/corrections" element={<RequireRole roles={['instructor', 'admin']}><Corrections /></RequireRole>} />
 
         {/* Administration */}

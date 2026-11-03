@@ -31,6 +31,8 @@ const NAV: Record<Role, NavEntry[]> = {
   instructor: [
     { to: '/intervenant', label: 'Tableau de bord', icon: 'home', end: true },
     { to: '/intervenant/cours', label: 'Mes cours', icon: 'menu_book' },
+    { to: '/intervenant/appel', label: 'Appel', icon: 'how_to_reg' },
+    { to: '/intervenant/planning', label: 'Planning', icon: 'event_note' },
     { to: '/intervenant/corrections', label: 'Corrections', icon: 'task_alt' },
     { to: '/assistant', label: 'Assistant IA', icon: 'smart_toy' },
     { to: '/documents', label: 'Documents & annales', icon: 'upload_file', section: 'Ressources' },

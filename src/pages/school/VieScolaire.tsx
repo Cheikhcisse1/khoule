@@ -16,8 +16,8 @@ export type SchoolStudent = Student & { profile: PersonName & { status: string }
 export interface ClassRef { id: number; code: string; name: string }
 export interface StudentGrade { student_id: string; score: number; max_score: number; course: { title: string; subject: { name: string } | null } | null }
 
-type Status = 'present' | 'absent' | 'retard' | 'excuse';
-const STATUS: Record<Status, { label: string; short: string; tone: 'success' | 'danger' | 'warning' | 'info' }> = {
+export type Status = 'present' | 'absent' | 'retard' | 'excuse';
+export const STATUS: Record<Status, { label: string; short: string; tone: 'success' | 'danger' | 'warning' | 'info' }> = {
   present: { label: 'Présent', short: 'P', tone: 'success' },
   absent: { label: 'Absent', short: 'A', tone: 'danger' },
   retard: { label: 'En retard', short: 'R', tone: 'warning' },
@@ -27,7 +27,7 @@ interface Mark { student_id: string; status: Status; note: string | null }
 interface Sheet { id: string; class_id: number; program_id: string | null; course_id: string | null; day: string; label: string; marks: Mark[] }
 
 const DAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
-const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+export const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const monday = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
 const on20 = (g: StudentGrade) => (Number(g.score) / Number(g.max_score)) * 20;
 const fmt20 = (v: number | null) => (v == null ? '—' : `${(Math.round(v * 10) / 10).toString().replace('.', ',')}/20`);
