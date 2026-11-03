@@ -53,6 +53,14 @@ end $$;
 revoke execute on function public.ai_consume(uuid, integer) from public, anon, authenticated;
 grant execute on function public.ai_consume(uuid, integer) to service_role;
 
+-- Rend un appel au quota quand l'IA a échoué (l'utilisateur n'est pas pénalisé)
+create or replace function public.ai_refund(p_user uuid) returns void
+language sql security definer set search_path = '' as $$
+  update public.ai_usage set count = greatest(count - 1, 0) where user_id = p_user and day = current_date;
+$$;
+revoke execute on function public.ai_refund(uuid) from public, anon, authenticated;
+grant execute on function public.ai_refund(uuid) to service_role;
+
 -- Ménage : historique conservé 90 jours, compteurs 30 jours
 create or replace function public.ai_cleanup() returns void
 language sql security definer set search_path = '' as $$

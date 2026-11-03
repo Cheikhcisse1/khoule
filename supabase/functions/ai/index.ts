@@ -132,6 +132,8 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: h });
   if (req.method !== 'POST') return reply({ code: 'method' }, 405);
 
+  // Si l'IA échoue après la réservation du quota, l'appel est rendu à l'utilisateur.
+  let refund: (() => Promise<unknown>) | null = null;
   try {
     const url = Deno.env.get('SUPABASE_URL')!;
     // Client « appelant » : toutes les lectures passent par la RLS de l'utilisateur
@@ -163,6 +165,7 @@ Deno.serve(async (req) => {
       if (!s || !a) throw new Fail('not_found', 404);
       if (prof.role !== 'admin' && a.course.instructor_id !== me.user.id) throw new Fail('forbidden', 403);
       const left = await consume(admin, me.user.id, LIMIT_STAFF);
+      refund = async () => { await admin.rpc('ai_refund', { p_user: me.user.id }); };
       const images: Img[] = [];
       for (const p of (s.file_paths as string[]).filter((f) => /\.(jpe?g|png|webp)$/i.test(f)).slice(0, 3)) {
         const { data: blob } = await caller.storage.from('submissions').download(p);
@@ -177,7 +180,9 @@ Deno.serve(async (req) => {
       }) }], images, true);
       const m = raw.match(/\{[\s\S]*\}/);
       if (!m) throw new Fail('bad_json', 502);
-      return reply({ result: JSON.parse(m[0]), skipped_files: skipped, remaining: left });
+      const result = JSON.parse(m[0]);
+      refund = null;
+      return reply({ result, skipped_files: skipped, remaining: left });
     }
 
     // ---------- Discussions (élève ou intervenant) ----------
@@ -213,6 +218,7 @@ Deno.serve(async (req) => {
     }
 
     const left = await consume(admin, me.user.id, prof.role === 'student' ? LIMIT_STUDENT : LIMIT_STAFF);
+    refund = async () => { await admin.rpc('ai_refund', { p_user: me.user.id }); };
     const chatMode = mode as 'tutor' | 'instructor';
     const { data: hist } = await admin.from('ai_messages').select('role,content')
       .eq('user_id', me.user.id).eq('mode', chatMode).eq('thread', thread)
@@ -223,12 +229,14 @@ Deno.serve(async (req) => {
       { role: 'user', content: message },
     ];
     const answer = await complete(messages);
+    refund = null;
     await admin.from('ai_messages').insert([
       { user_id: me.user.id, mode: chatMode, thread, role: 'user', content: message },
       { user_id: me.user.id, mode: chatMode, thread, role: 'assistant', content: answer.slice(0, 20000) },
     ]);
     return reply({ answer, thread, remaining: left });
   } catch (e) {
+    if (refund) await refund().catch(() => {});
     if (e instanceof Fail) return reply({ code: e.code }, e.status);
     console.error(e);
     return reply({ code: 'server_error' }, 500);

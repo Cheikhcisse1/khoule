@@ -482,3 +482,10 @@ textarea { resize: vertical; }
 .bubble.ai { border-color: var(--blue); background: var(--blue-100); }
 .chat-input textarea { flex: 1; resize: vertical; min-height: 2.6rem; font: inherit; padding: .5rem .7rem; border: 1px solid var(--line); border-radius: 10px; }
 .ai-box { border: 1px dashed var(--blue); background: var(--blue-100); border-radius: 10px; padding: .6rem .8rem; display: grid; gap: .4rem; }
+.ai-text { display: grid; gap: .35rem; }
+.ai-text p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ai-text .ai-h { font-weight: 700; margin-top: .3rem; }
+.ai-text .ai-li { padding-left: .9rem; text-indent: -.9rem; }
+.ai-text hr { border: 0; border-top: 1px solid var(--line); width: 100%; margin: .2rem 0; }
+.ai-table { font-size: .88rem; background: #fff; }
+.ai-table th, .ai-table td { padding: .3rem .5rem; vertical-align: top; }

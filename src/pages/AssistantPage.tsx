@@ -5,6 +5,7 @@ import { must, supabase } from '../lib/supabase';
 import { useLoad } from '../lib/hooks';
 import { askAi, type AiMode } from '../lib/ai';
 import { Button, Card, ConfirmButton, Empty, ErrorBox, PageHeader, Spinner, useAction } from '../components/ui';
+import { AiText } from '../components/AiText';
 
 interface Line { id: string | number; role: 'user' | 'assistant'; content: string }
 
@@ -117,7 +118,7 @@ export function AssistantPage() {
           )}
           {lines.map((m) => (
             <div key={m.id} className={`bubble-row ${m.role === 'user' ? 'mine' : ''}`}>
-              <div className={`bubble ${m.role === 'assistant' ? 'ai' : ''}`}><p>{m.content}</p></div>
+              <div className={`bubble ${m.role === 'assistant' ? 'ai' : ''}`}>{m.role === 'assistant' ? <AiText text={m.content} /> : <p>{m.content}</p>}</div>
             </div>
           ))}
           {busy && <div className="bubble-row"><div className="bubble ai"><p className="muted">L’assistant réfléchit…</p></div></div>}

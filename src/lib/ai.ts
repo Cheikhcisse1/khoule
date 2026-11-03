@@ -49,5 +49,19 @@ export function correctionText(c: AiCorrection): string {
   if (c.details?.length) parts.push(c.details.map((d) => `${icon[d.statut] ?? '•'} ${d.question} (${d.points}) : ${d.commentaire}`).join('\n'));
   if (c.points_forts?.length) parts.push('Points forts : ' + c.points_forts.join(' ; '));
   if (c.a_retravailler?.length) parts.push('À retravailler : ' + c.a_retravailler.join(' ; '));
-  return parts.filter(Boolean).join('\n\n');
+  return plainText(parts.filter(Boolean).join('\n\n'));
 }
+
+/** Les modèles glissent parfois du LaTeX malgré la consigne : on le rend lisible en texte simple. */
+export function cleanMath(s: string): string {
+  let t = s.replace(/\\\[|\\\]|\\\(|\\\)|\$\$?/g, '');
+  for (let i = 0; i < 3; i++) t = t.replace(/\\[dt]?frac\{([^{}]*)\}\{([^{}]*)\}/g, '($1)/($2)').replace(/\(([\w.,]+)\)\/\(([\w.,]+)\)/g, '$1/$2');
+  return t
+    .replace(/\\sqrt\{([^{}]*)\}/g, '√($1)').replace(/\\times/g, '×').replace(/\\div/g, '÷').replace(/\\cdot/g, '·')
+    .replace(/\\(leq?|le)\b/g, '≤').replace(/\\(geq?|ge)\b/g, '≥').replace(/\\neq?\b/g, '≠').replace(/\\approx/g, '≈')
+    .replace(/\\pi\b/g, 'π').replace(/\\infty/g, '∞').replace(/\\text\{([^{}]*)\}/g, '$1').replace(/\\(left|right|,|;|!|quad)/g, ' ')
+    .replace(/\^\{?2\}?/g, '²').replace(/\^\{?3\}?/g, '³').replace(/\\%/g, '%');
+}
+
+/** Version texte brut (sans Markdown) pour un champ de saisie. */
+export const plainText = (s: string) => cleanMath(s).replace(/\*\*(.+?)\*\*/g, '$1').replace(/^#{1,6}\s*/gm, '').replace(/^\s*---+\s*$/gm, '');
