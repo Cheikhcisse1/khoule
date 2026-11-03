@@ -8,5 +8,16 @@ export default defineConfig(({ mode }) => {
     base: env.BASE_PATH || '/',
     plugins: [react()],
     server: { host: true, port: 5173 },
+    // Bibliothèques dans des fichiers à part : elles restent en cache quand seule l'application change
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            react: ['react', 'react-dom', 'react-router-dom'],
+            supabase: ['@supabase/supabase-js'],
+          },
+        },
+      },
+    },
   };
 });

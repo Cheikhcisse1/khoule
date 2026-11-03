@@ -1,0 +1,16 @@
+{
+  "name": "Khoulé Éducation",
+  "short_name": "Khoulé",
+  "description": "Soutien scolaire gratuit de la CI au Master : cours, TD, devoirs corrigés et assistant IA.",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f8f9fa",
+  "theme_color": "#ffffff",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

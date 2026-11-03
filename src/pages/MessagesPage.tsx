@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { must, supabase } from '../lib/supabase';
-import { ROLE_LABEL, fullName, timeAgo } from '../lib/format';
+import { fullName, timeAgo } from '../lib/format';
+import { STAFF_TITLES } from '../lib/schools';
 import type { Message, Profile } from '../lib/types';
 import { Avatar, Button, Empty, PageHeader, Spinner, useAction } from '../components/ui';
 
@@ -16,6 +17,7 @@ export function MessagesPage() {
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [labels, setLabels] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
   const [text, setText] = useState('');
@@ -34,6 +36,15 @@ export function MessagesPage() {
     // Un élève ne peut écrire qu'aux intervenants et à l'administration
     setContacts(profile!.role === 'student' ? list.filter((p) => p.role !== 'student') : list);
     setLoading(false);
+    // Fonction des responsables d'établissement et « Étudiant » pour le supérieur (au lieu de « Intervenant » / « Élève »)
+    const { data: extra } = await supabase.rpc('people_labels', { p_ids: list.map((p) => p.id) });
+    const map: Record<string, string> = {};
+    for (const p of list) map[p.id] = p.role === 'admin' ? 'Administrateur' : p.role === 'student' ? 'Élève' : 'Intervenant';
+    for (const x of (extra ?? []) as { id: string; staff_title: string | null; school_name: string | null; higher_student: boolean }[]) {
+      if (x.staff_title) map[x.id] = `${STAFF_TITLES[x.staff_title] ?? 'Responsable'}${x.school_name ? ` · ${x.school_name}` : ''}`;
+      else if (x.higher_student) map[x.id] = 'Étudiant';
+    }
+    setLabels(map);
   }, [uid, profile]);
 
   useEffect(() => {
@@ -96,7 +107,7 @@ export function MessagesPage() {
             <ul>
               {filtered.slice(0, 30).map((c) => (
                 <li key={c.id}><button className="conv" onClick={() => { setParams({ avec: c.id }); setFilter(''); }}>
-                  <Avatar person={c} size={34} /><span><strong>{fullName(c)}</strong><small>{ROLE_LABEL[c.role]}</small></span>
+                  <Avatar person={c} size={34} /><span><strong>{fullName(c)}</strong><small>{labels[c.id]}</small></span>
                 </button></li>
               ))}
               {!filtered.length && <li className="muted pad">Aucun contact.</li>}
@@ -126,7 +137,7 @@ export function MessagesPage() {
               <header className="chat-head">
                 <button className="icon-btn back-btn" onClick={() => setParams({})} aria-label="Retour">←</button>
                 <Avatar person={partner} size={34} />
-                <div><strong>{fullName(partner)}</strong><br /><small className="muted">{partner ? ROLE_LABEL[partner.role] : ''}</small></div>
+                <div><strong>{fullName(partner)}</strong><br /><small className="muted">{partner ? labels[partner.id] : ''}</small></div>
               </header>
               <div className="chat-scroll">
                 {thread.length === 0 && <Empty icon="👋" title="Démarrez la conversation" />}

@@ -3,7 +3,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { must, supabase } from '../lib/supabase';
 import { useLoad, useRefData } from '../lib/hooks';
 import { CYCLES, CYCLE_ORDER, INSTRUCTOR_TYPES } from '../lib/format';
-import type { Instructor, School, Student } from '../lib/types';
+import type { Instructor, School, SchoolProgram, Student } from '../lib/types';
 import { SCHOOL_STATUS } from '../lib/schools';
 import { Button, Field, Spinner, useAction } from './ui';
 
@@ -146,6 +146,7 @@ export function StudentProfileForm() {
   const { student, refresh } = useAuth();
   const { data: ref } = useRefData();
   const { data: schools } = useLoad(async () => must(await supabase.from('schools').select('id,name,city').order('name')) as Pick<School, 'id' | 'name' | 'city'>[], []);
+  const { data: programs } = useLoad(async () => must(await supabase.from('school_programs').select('*').order('name')) as SchoolProgram[], []);
   const [form, setForm] = useState<Partial<Student>>(student ?? {});
   const { busy, run } = useAction();
 
@@ -159,7 +160,7 @@ export function StudentProfileForm() {
     void run(async () => {
       must(await supabase.from('students').update({
         class_id: form.class_id ? Number(form.class_id) : null, school: form.school, phone: form.phone,
-        school_id: form.school_id || null,
+        school_id: form.school_id || null, program_id: form.program_id || null,
         guardian_name: form.guardian_name, guardian_relation: form.guardian_relation,
         guardian_phone: form.guardian_phone, guardian_email: form.guardian_email,
         guardian_consent: form.guardian_consent,
@@ -178,11 +179,19 @@ export function StudentProfileForm() {
         </Field>
         <Field label="Établissement"><input value={form.school ?? ''} onChange={setF('school')} /></Field>
         <Field label="Établissement partenaire" hint={student.school_id ? `Statut : ${SCHOOL_STATUS[student.school_status ?? 'pending']}` : 'Si votre école a un espace sur Khoulé, son responsable validera votre demande.'}>
-          <select value={form.school_id ?? ''} onChange={setF('school_id')}>
+          <select value={form.school_id ?? ''} onChange={(e) => setForm((s) => ({ ...s, school_id: e.target.value || null, program_id: null }))}>
             <option value="">— Aucun —</option>
             {schools?.map((s) => <option key={s.id} value={s.id}>{s.name}{s.city ? ` (${s.city})` : ''}</option>)}
           </select>
         </Field>
+        {!!programs?.some((pr) => pr.school_id === form.school_id) && (
+          <Field label="Filière" hint="Vous voyez les cours de votre filière et les cours communs de l’établissement">
+            <select value={form.program_id ?? ''} onChange={setF('program_id')}>
+              <option value="">— Aucune —</option>
+              {programs.filter((pr) => pr.school_id === form.school_id).map((pr) => <option key={pr.id} value={pr.id}>{pr.name}</option>)}
+            </select>
+          </Field>
+        )}
       </div>
       <fieldset className="fieldset">
         <legend>Parent ou tuteur légal</legend>

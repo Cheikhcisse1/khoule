@@ -1,45 +1,49 @@
+import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { RequireRole } from './auth/RequireRole';
 import { homeFor, useAuth } from './auth/AuthProvider';
 import { Layout } from './components/Layout';
 import { FullPageSpinner } from './components/ui';
 import { Landing } from './pages/Landing';
-import { Login } from './pages/Login';
-import { Register } from './pages/Register';
-import { ForgotPassword, ResetPassword } from './pages/PasswordPages';
-import { Suspended } from './pages/Suspended';
-import { Application } from './pages/instructor/Application';
-import { PendingStudent } from './pages/student/PendingStudent';
 import { MfaChallenge } from './components/Mfa';
-import { StudentDashboard } from './pages/student/StudentDashboard';
-import { StudentCourses } from './pages/student/StudentCourses';
-import { StudentAssignments } from './pages/student/StudentAssignments';
-import { StudentGrades } from './pages/student/StudentGrades';
-import { InstructorDashboard } from './pages/instructor/InstructorDashboard';
-import { InstructorCourses } from './pages/instructor/InstructorCourses';
-import { Corrections } from './pages/instructor/Corrections';
-import { AdminDashboard } from './pages/admin/AdminDashboard';
-import { AdminUsers } from './pages/admin/AdminUsers';
-import { AdminReferential } from './pages/admin/AdminReferential';
-import { AdminAssignments } from './pages/admin/AdminAssignments';
-import { AdminCourses } from './pages/admin/AdminCourses';
-import { AdminAnnouncements } from './pages/admin/AdminAnnouncements';
-import { AdminModeration } from './pages/admin/AdminModeration';
-import { CoursePage } from './pages/CoursePage';
-import { CalendarPage } from './pages/CalendarPage';
-import { QuestionsPage } from './pages/QuestionsPage';
-import { QuestionDetail } from './pages/QuestionDetail';
-import { MessagesPage } from './pages/MessagesPage';
-import { AnnouncementsPage } from './pages/AnnouncementsPage';
-import { SearchPage } from './pages/SearchPage';
-import { ProfilePage } from './pages/ProfilePage';
-import { InstructorPublicPage } from './pages/InstructorPublicPage';
-import { LibraryPage } from './pages/LibraryPage';
-import { AssistantPage } from './pages/AssistantPage';
-import { SchoolSpace } from './pages/SchoolSpace';
-import { AdminSchools } from './pages/admin/AdminSchools';
 import { isConfigured } from './lib/supabase';
 import { SetupNotice } from './pages/SetupNotice';
+
+// Chaque page est chargée à la demande : le premier affichage reste léger sur une connexion 3G
+const Login = lazy(() => import('./pages/Login').then((m) => ({ default: m.Login })));
+const Register = lazy(() => import('./pages/Register').then((m) => ({ default: m.Register })));
+const ForgotPassword = lazy(() => import('./pages/PasswordPages').then((m) => ({ default: m.ForgotPassword })));
+const ResetPassword = lazy(() => import('./pages/PasswordPages').then((m) => ({ default: m.ResetPassword })));
+const Suspended = lazy(() => import('./pages/Suspended').then((m) => ({ default: m.Suspended })));
+const Application = lazy(() => import('./pages/instructor/Application').then((m) => ({ default: m.Application })));
+const PendingStudent = lazy(() => import('./pages/student/PendingStudent').then((m) => ({ default: m.PendingStudent })));
+const StudentDashboard = lazy(() => import('./pages/student/StudentDashboard').then((m) => ({ default: m.StudentDashboard })));
+const StudentCourses = lazy(() => import('./pages/student/StudentCourses').then((m) => ({ default: m.StudentCourses })));
+const StudentAssignments = lazy(() => import('./pages/student/StudentAssignments').then((m) => ({ default: m.StudentAssignments })));
+const StudentGrades = lazy(() => import('./pages/student/StudentGrades').then((m) => ({ default: m.StudentGrades })));
+const InstructorDashboard = lazy(() => import('./pages/instructor/InstructorDashboard').then((m) => ({ default: m.InstructorDashboard })));
+const InstructorCourses = lazy(() => import('./pages/instructor/InstructorCourses').then((m) => ({ default: m.InstructorCourses })));
+const Corrections = lazy(() => import('./pages/instructor/Corrections').then((m) => ({ default: m.Corrections })));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard })));
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers').then((m) => ({ default: m.AdminUsers })));
+const AdminReferential = lazy(() => import('./pages/admin/AdminReferential').then((m) => ({ default: m.AdminReferential })));
+const AdminAssignments = lazy(() => import('./pages/admin/AdminAssignments').then((m) => ({ default: m.AdminAssignments })));
+const AdminCourses = lazy(() => import('./pages/admin/AdminCourses').then((m) => ({ default: m.AdminCourses })));
+const AdminAnnouncements = lazy(() => import('./pages/admin/AdminAnnouncements').then((m) => ({ default: m.AdminAnnouncements })));
+const AdminModeration = lazy(() => import('./pages/admin/AdminModeration').then((m) => ({ default: m.AdminModeration })));
+const CoursePage = lazy(() => import('./pages/CoursePage').then((m) => ({ default: m.CoursePage })));
+const CalendarPage = lazy(() => import('./pages/CalendarPage').then((m) => ({ default: m.CalendarPage })));
+const QuestionsPage = lazy(() => import('./pages/QuestionsPage').then((m) => ({ default: m.QuestionsPage })));
+const QuestionDetail = lazy(() => import('./pages/QuestionDetail').then((m) => ({ default: m.QuestionDetail })));
+const MessagesPage = lazy(() => import('./pages/MessagesPage').then((m) => ({ default: m.MessagesPage })));
+const AnnouncementsPage = lazy(() => import('./pages/AnnouncementsPage').then((m) => ({ default: m.AnnouncementsPage })));
+const SearchPage = lazy(() => import('./pages/SearchPage').then((m) => ({ default: m.SearchPage })));
+const ProfilePage = lazy(() => import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
+const InstructorPublicPage = lazy(() => import('./pages/InstructorPublicPage').then((m) => ({ default: m.InstructorPublicPage })));
+const LibraryPage = lazy(() => import('./pages/LibraryPage').then((m) => ({ default: m.LibraryPage })));
+const AssistantPage = lazy(() => import('./pages/AssistantPage').then((m) => ({ default: m.AssistantPage })));
+const SchoolSpace = lazy(() => import('./pages/SchoolSpace').then((m) => ({ default: m.SchoolSpace })));
+const AdminSchools = lazy(() => import('./pages/admin/AdminSchools').then((m) => ({ default: m.AdminSchools })));
 
 function Home() {
   const { session, profile, loading } = useAuth();
@@ -55,6 +59,7 @@ export default function App() {
   if (session && mfaRequired) return <MfaChallenge />;
 
   return (
+    <Suspense fallback={<FullPageSpinner />}>
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/connexion" element={<Login />} />
@@ -108,5 +113,6 @@ export default function App() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   );
 }

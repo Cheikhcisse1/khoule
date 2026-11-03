@@ -558,3 +558,6 @@ textarea { resize: vertical; }
 @media (prefers-reduced-motion: reduce) { .social-link, .social-link svg { animation: none; transition: none; } }
 .landing-foot .logo-text { color: #fff; }
 .landing-foot .logo-text em { color: #bdc1c6; }
+
+/* Bandeau hors connexion */
+.offline-banner { display: flex; align-items: center; gap: .5rem; justify-content: center; background: #3c4043; color: #fff; font-weight: 700; font-size: .9rem; padding: .5rem 1rem; }

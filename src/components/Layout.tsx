@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Suspense, useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase } from '../lib/supabase';
 import { fullName, timeAgo } from '../lib/format';
 import type { AppNotification, Role } from '../lib/types';
-import { Avatar } from './ui';
+import { Avatar, Spinner } from './ui';
 import { Logo } from './Logo';
 import { ErrorBoundary } from './ErrorBoundary';
 import { roleLabel, useMySchools } from '../lib/schools';
@@ -127,13 +127,27 @@ export function Layout() {
             </span>
           </Link>
         </header>
+        <OfflineBanner />
         <main className="content">
-          <ErrorBoundary resetKey={location.pathname}><Outlet /></ErrorBoundary>
+          <ErrorBoundary resetKey={location.pathname}><Suspense fallback={<Spinner />}><Outlet /></Suspense></ErrorBoundary>
           <ForcePassword />
         </main>
       </div>
     </div>
   );
+}
+
+function OfflineBanner() {
+  const [online, setOnline] = useState(navigator.onLine);
+  useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
+  }, []);
+  if (online) return null;
+  return <div className="offline-banner" role="status"><Icon name="cloud_off" /> Hors connexion : les données s’afficheront dès le retour du réseau.</div>;
 }
 
 function NotificationBell({ userId }: { userId: string }) {
