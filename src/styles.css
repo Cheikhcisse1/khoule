@@ -452,7 +452,7 @@ textarea { resize: vertical; }
 .step-n { display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--green-100); color: var(--green-900); font-weight: 800; margin-bottom: .6rem; }
 .callout { display: flex; gap: 2rem; justify-content: space-between; align-items: center; background: var(--gold-100); border-radius: 20px; padding: 2rem; border: 1px solid #fde293; }
 .callout h2 { text-align: left; margin-bottom: .5rem; }
-.landing-foot { background: #fff; border-top: 1px solid var(--line); color: var(--muted); padding: 2rem clamp(1rem, 4vw, 3rem); display: grid; gap: .75rem; }
+.landing-foot { background: #000; color: #bdc1c6; padding: 2rem clamp(1rem, 4vw, 3rem); display: grid; gap: .75rem; }
 
 /* --- responsive --- */
 @media (max-width: 1024px) {
@@ -542,4 +542,7 @@ textarea { resize: vertical; }
 
 /* Pied de page : réseaux sociaux */
 .social { display: flex; flex-wrap: wrap; gap: .5rem; }
-.social .chip { color: var(--ink); text-decoration: none; font-weight: 700; }
+.social .chip { color: #fff; background: transparent; border-color: rgba(255, 255, 255, .35); text-decoration: none; font-weight: 700; }
+.social .chip:hover { background: rgba(255, 255, 255, .12); }
+.landing-foot .logo-text { color: #fff; }
+.landing-foot .logo-text em { color: #bdc1c6; }

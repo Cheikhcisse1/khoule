@@ -15,7 +15,6 @@ const SOCIAL: { name: string; url: string }[] = [
   { name: 'Instagram', url: 'https://www.instagram.com/cheikhc0532020/' },
   // 07 45 04 80 01 : numéro français, format international pour WhatsApp
   { name: 'WhatsApp', url: 'https://wa.me/33745048001' },
-  { name: 'E-mail', url: 'mailto:cheikhc053@gmail.com' },
 ];
 
 const STEPS = [
@@ -103,7 +102,7 @@ export function Landing() {
         {SOCIAL.some((x) => x.url) && (
           <nav className="social" aria-label="Réseaux sociaux">
             {SOCIAL.filter((x) => x.url).map((x) => (
-              <a key={x.name} href={x.url} target={x.url.startsWith('mailto:') ? undefined : '_blank'} rel="noopener noreferrer" className="chip">{x.name}</a>
+              <a key={x.name} href={x.url} target="_blank" rel="noopener noreferrer" className="chip">{x.name}</a>
             ))}
           </nav>
         )}
