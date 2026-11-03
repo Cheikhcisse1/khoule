@@ -60,6 +60,9 @@ const NAV: Record<Role, NavEntry[]> = {
   ],
 };
 
+// Outils d'enseignant masqués pour un responsable d'établissement (il gère tout depuis « Mon école »)
+const LEADER_HIDDEN = ['/intervenant', '/intervenant/cours', '/intervenant/appel', '/intervenant/planning', '/intervenant/corrections'];
+
 export function Icon({ name }: { name: string }) {
   return <span className="material-symbols-rounded" aria-hidden>{name}</span>;
 }
@@ -78,7 +81,9 @@ export function Layout() {
 
   if (!profile) return null;
   const items = mySchools?.length
-    ? [...NAV[profile.role].slice(0, 1), { to: '/ecole', label: 'Mon école', icon: 'school' }, ...NAV[profile.role].slice(1)]
+    ? (profile.role === 'instructor'
+        ? [{ to: '/ecole', label: 'Mon école', icon: 'school' }, ...NAV.instructor.filter((i) => !LEADER_HIDDEN.includes(i.to))]
+        : [...NAV[profile.role].slice(0, 1), { to: '/ecole', label: 'Mon école', icon: 'school' }, ...NAV[profile.role].slice(1)])
     : NAV[profile.role];
 
   const onSearch = (e: FormEvent) => {

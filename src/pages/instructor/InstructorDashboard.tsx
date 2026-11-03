@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
+import { useMySchools } from '../../lib/schools';
 import { useAuth } from '../../auth/AuthProvider';
 import { must, supabase } from '../../lib/supabase';
 import { useLoad } from '../../lib/hooks';
@@ -17,6 +18,7 @@ export interface CourseStat {
 export function InstructorDashboard() {
   const { profile } = useAuth();
   const uid = profile!.id;
+  const { data: mySchools, loading: schoolsLoading } = useMySchools(uid);
   const { data, error, loading, reload } = useLoad(async () => {
     const stats = must(await supabase.rpc('instructor_course_stats')) as CourseStat[];
     const mine = stats.map((s) => s.course_id);
@@ -30,7 +32,9 @@ export function InstructorDashboard() {
       assignments: assignments as unknown as { class: { code: string }; subject: { name: string } }[] };
   }, [uid]);
 
-  if (loading) return <Spinner />;
+  // Responsable d'établissement : son tableau de bord est celui de son école
+  if (mySchools?.length) return <Navigate to="/ecole" replace />;
+  if (loading || schoolsLoading) return <Spinner />;
   if (error || !data) return <ErrorBox error={error ?? ''} onRetry={reload} />;
   const sum = (k: keyof CourseStat) => data.stats.reduce((s, c) => s + Number(c[k] ?? 0), 0);
 

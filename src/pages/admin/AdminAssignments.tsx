@@ -17,18 +17,21 @@ export function AdminAssignments() {
   const { busy, run } = useAction();
 
   const { data, error, loading, reload } = useLoad(async () => {
-    const [rows, instructors, wishS, wishC, availabilities] = await Promise.all([
+    const [rows, instructors, wishS, wishC, availabilities, staff] = await Promise.all([
       supabase.from('teaching_assignments').select('id, instructor_id, class_id, subject_id').then(must),
       supabase.from('profiles').select('id, first_name, last_name, role, status, instructor:instructors!instructors_profile_id_fkey!inner(application_status, specialty)')
         .eq('role', 'instructor').eq('instructor.application_status', 'approved').order('last_name').then(must),
       supabase.from('instructor_subjects').select('instructor_id, subject_id').then(must),
       supabase.from('instructor_classes').select('instructor_id, class_id').then(must),
       fetchAvailabilities(),
+      // Responsables d'établissement : comptes « intervenant » techniquement, mais rien à leur affecter
+      supabase.from('school_staff').select('user_id').then(must),
     ]);
     return {
       availabilities,
       rows: rows as Row[],
-      instructors: instructors as unknown as (Profile & { instructor: { specialty: string | null } })[],
+      instructors: (instructors as unknown as (Profile & { instructor: { specialty: string | null } })[])
+        .filter((i) => !(staff as { user_id: string }[]).some((st) => st.user_id === i.id)),
       wishS: wishS as { instructor_id: string; subject_id: number }[],
       wishC: wishC as { instructor_id: string; class_id: number }[],
     };

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthProvider';
 import { must, supabase } from '../../lib/supabase';
 import { useLoad, useRefData } from '../../lib/hooks';
+import { useMySchools } from '../../lib/schools';
 import { fetchCourses } from '../../lib/queries';
 import type { Course, SchoolProgram } from '../../lib/types';
 import { Button, Card, Empty, ErrorBox, Field, Modal, PageHeader, Spinner, useAction } from '../../components/ui';
@@ -17,6 +18,7 @@ export function InstructorCourses() {
   const { profile } = useAuth();
   const uid = profile!.id;
   const [open, setOpen] = useState(false);
+  const { data: mySchools } = useMySchools(uid);
 
   const { data, error, loading, reload } = useLoad(async () => {
     const [courses, pairs, schools] = await Promise.all([
@@ -38,7 +40,7 @@ export function InstructorCourses() {
       {data.schools.length > 0 && (
         <p className="small muted">Vous enseignez aussi à : {data.schools.map((s) => s.school?.name).join(', ')}. Choisissez l’établissement et la filière en créant le cours.</p>
       )}
-      {!data.pairs.length && !data.schools.length && (
+      {!data.pairs.length && !data.schools.length && !mySchools?.length && (
         <div className="alert alert-info">Vous pourrez créer des cours dès que l’administration vous aura affecté une classe et une matière.</div>
       )}
       {data.courses.length ? (
