@@ -592,4 +592,29 @@ textarea { resize: vertical; }
   .rc-sign span { font-weight: 700; font-size: 9pt; }
   .rc-box { border: 1px solid #999; height: 70pt; margin-top: 3pt; }
   .rc-foot { margin-top: 10pt; font-size: 8pt; color: #666; text-align: center; }
+  .certificate .cert-body { font-size: 12pt; line-height: 1.8; margin: 18pt 0 0; text-align: justify; }
+  .certificate .cert-place { margin: 24pt 0 0; text-align: right; }
 }
+
+/* Planning de la semaine */
+.timetable { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .6rem; margin-bottom: .75rem; }
+.tt-day { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: .6rem; display: grid; gap: .4rem; align-content: start; min-height: 140px; }
+.tt-day.today { border-color: var(--green-700); box-shadow: inset 0 3px 0 var(--green-700); }
+.tt-day h3 { font-size: .9rem; margin: 0 0 .2rem; }
+.tt-slot { display: grid; gap: .05rem; padding: .45rem .55rem; border-radius: 8px; border-left: 4px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, #fff); color: var(--ink); text-decoration: none !important; font-size: .85rem; }
+.tt-slot:hover { box-shadow: var(--shadow-hover); }
+.tt-slot small { color: var(--muted); }
+.tt-slot.cancelled { opacity: .5; text-decoration: line-through !important; }
+@media (max-width: 1024px) { .timetable { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .timetable { grid-template-columns: 1fr; } .tt-day { min-height: 0; } }
+
+/* Liste d'appel */
+.roll { list-style: none; margin: 0; padding: 0; display: grid; }
+.roll li { display: flex; justify-content: space-between; align-items: center; gap: .75rem; padding: .45rem 0; border-bottom: 1px solid var(--line); }
+.roll-choices { display: flex; gap: .3rem; }
+.roll-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: #fff; font: inherit; font-weight: 800; cursor: pointer; color: var(--muted); }
+.roll-btn.on.roll-present { background: var(--green-700); border-color: var(--green-700); color: #fff; }
+.roll-btn.on.roll-absent { background: var(--danger); border-color: var(--danger); color: #fff; }
+.roll-btn.on.roll-retard { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+.roll-btn.on.roll-excuse { background: var(--blue); border-color: var(--blue); color: #fff; }

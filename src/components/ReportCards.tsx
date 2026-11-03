@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { fullName } from '../lib/format';
 import type { PersonName, SchoolProgram } from '../lib/types';
@@ -88,18 +88,21 @@ export function ReportCardsButton({ schoolName, higher, classes, programs, stude
   );
 }
 
-function PrintCards({ schoolName, higher, period, className, programName, programOf, students, grades, onDone }: {
-  schoolName: string; higher: boolean; period: string; className: string; programName?: string;
-  programOf: (id: string | null) => string | undefined; students: ReportStudent[]; grades: ReportGrade[]; onDone: () => void;
-}) {
-  // Impression dès que les pages sont dans le document, puis on les retire
+/** Pages A4 à imprimer : ajoutées au document, impression lancée, puis retirées après l'impression. */
+export function PrintSheet({ children, onDone }: { children: ReactNode; onDone: () => void }) {
   useEffect(() => {
     const done = () => onDone();
     window.addEventListener('afterprint', done, { once: true });
     const t = setTimeout(() => window.print(), 50);
     return () => { clearTimeout(t); window.removeEventListener('afterprint', done); };
   }, [onDone]);
+  return createPortal(<div className="print-root">{children}</div>, document.body);
+}
 
+function PrintCards({ schoolName, higher, period, className, programName, programOf, students, grades, onDone }: {
+  schoolName: string; higher: boolean; period: string; className: string; programName?: string;
+  programOf: (id: string | null) => string | undefined; students: ReportStudent[]; grades: ReportGrade[]; onDone: () => void;
+}) {
   // Moyenne générale de chaque élève (moyenne des matières) pour le rang
   const rows = students.map((s) => {
     const mine = grades.filter((g) => g.student_id === s.profile_id);
@@ -119,8 +122,8 @@ function PrintCards({ schoolName, higher, period, className, programName, progra
   const classAvg = mean(ranked);
   const learner = higher ? 'Étudiant(e)' : 'Élève';
 
-  return createPortal(
-    <div className="print-root">
+  return (
+    <PrintSheet onDone={onDone}>
       {rows.length === 0 && <section className="report-card"><p>Aucun {higher ? 'étudiant' : 'élève'} validé dans cette sélection.</p></section>}
       {[...rows].sort((a, b) => fullName(a.s.profile).localeCompare(fullName(b.s.profile))).map(({ s, subjects, general }) => (
         <section key={s.profile_id} className="report-card">
@@ -162,7 +165,6 @@ function PrintCards({ schoolName, higher, period, className, programName, progra
           <footer className="rc-foot">Édité le {new Date().toLocaleDateString('fr-FR')} · khoule-education.vercel.app</footer>
         </section>
       ))}
-    </div>,
-    document.body,
+    </PrintSheet>
   );
 }

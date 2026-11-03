@@ -9,11 +9,12 @@ import { KIND_CYCLES, SCHOOL_KINDS, SCHOOL_STATUS, STAFF_TITLES, covers, isHighe
 import type { Announcement, Course, PersonName, SchoolProgram, SchoolStaff, Student } from '../lib/types';
 import { CourseCard } from '../components/CourseBits';
 import { ReportCardsButton } from '../components/ReportCards';
+import { AdminPanel, FollowupModal, PlanningPanel, RollPanel } from './school/VieScolaire';
 import {
   Badge, Button, Card, ConfirmButton, Empty, ErrorBox, Field, Modal, PageHeader, RichText, Spinner, StatCard, Tabs, useAction,
 } from '../components/ui';
 
-type Tab = 'dash' | 'students' | 'programs' | 'courses' | 'grades' | 'news' | 'team';
+type Tab = 'dash' | 'students' | 'programs' | 'courses' | 'planning' | 'roll' | 'grades' | 'admin' | 'news' | 'team';
 type SchoolStudent = Student & { profile: PersonName & { status: string } };
 interface GradeRow { student_id: string; score: number; max_score: number; course: { title: string; subject: { name: string } | null } | null; assignment: { exercise: { title: string } | null } | null }
 
@@ -62,7 +63,10 @@ export function SchoolSpace() {
         { id: 'students', label: higher ? '🎓 Étudiants' : '🎒 Élèves' },
         ...(higher ? [{ id: 'programs' as Tab, label: '🧭 Filières' }] : []),
         { id: 'courses', label: '📚 Cours' },
+        { id: 'planning', label: '🗓️ Planning' },
+        { id: 'roll', label: '📋 Appel' },
         { id: 'grades', label: '📈 Notes' },
+        { id: 'admin', label: '🗂️ Administratif' },
         { id: 'news', label: '📢 Annonces' },
         ...(director ? [{ id: 'team' as Tab, label: '🧑‍💼 Équipe' }] : []),
       ]} />
@@ -75,6 +79,7 @@ export function SchoolSpace() {
 
 function SchoolPanels({ st, tab, setTab, uid }: { st: SchoolStaff; tab: Tab; setTab: (t: Tab) => void; uid: string }) {
   const { data: ref } = useRefData();
+  const [follow, setFollow] = useState<SchoolStudent | null>(null);
   const { data, error, loading, reload } = useLoad(async () => {
     const [students, courses, programs] = await Promise.all([
       supabase.from('students')
@@ -144,7 +149,18 @@ function SchoolPanels({ st, tab, setTab, uid }: { st: SchoolStaff; tab: Tab; set
     );
   }
 
-  if (tab === 'students') return <StudentsPanel st={st} students={data.students} cls={cls} programs={data.programs} onChange={reload} />;
+  const followModal = follow && (
+    <FollowupModal st={st} student={follow} grades={data.grades} onClose={() => setFollow(null)}
+      className={`${cls(follow.class_id)?.name ?? ''}${follow.program_id ? ` · ${data.programs.find((p) => p.id === follow.program_id)?.name ?? ''}` : ''}`} />
+  );
+
+  if (tab === 'students') return <><StudentsPanel st={st} students={data.students} cls={cls} programs={data.programs} onChange={reload} onFollow={setFollow} />{followModal}</>;
+
+  if (tab === 'planning') return <PlanningPanel courses={data.courses} myClasses={myClasses} programs={data.programs} />;
+
+  if (tab === 'roll') return <RollPanel st={st} students={approved} myClasses={myClasses} programs={data.programs} courses={data.courses} />;
+
+  if (tab === 'admin') return <><AdminPanel st={st} students={approved} cls={cls} programs={data.programs} onFollow={setFollow} />{followModal}</>;
 
   if (tab === 'programs') return <ProgramsPanel st={st} programs={data.programs} students={data.students} myClasses={myClasses} onChange={reload} />;
 
@@ -193,9 +209,9 @@ function SchoolPanels({ st, tab, setTab, uid }: { st: SchoolStaff; tab: Tab; set
 }
 
 // ---------------------------------------------------------------------------
-function StudentsPanel({ st, students, cls, programs, onChange }:
+function StudentsPanel({ st, students, cls, programs, onChange, onFollow }:
   { st: SchoolStaff; students: SchoolStudent[]; cls: (id: number | null) => { code: string; name: string } | undefined;
-    programs: SchoolProgram[]; onChange: () => Promise<void> }) {
+    programs: SchoolProgram[]; onChange: () => Promise<void>; onFollow: (s: SchoolStudent) => void }) {
   const { run } = useAction();
   const [filter, setFilter] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const list = students.filter((s) => s.school_status === filter);
@@ -226,6 +242,7 @@ function StudentsPanel({ st, students, cls, programs, onChange }:
                 <div className="row">
                   {s.school_status !== 'approved' && <Button onClick={() => void review(s, true)}>Valider</Button>}
                   {s.school_status === 'pending' && <Button variant="ghost" onClick={() => void review(s, false)}>Refuser</Button>}
+                  {s.school_status === 'approved' && <Button variant="secondary" onClick={() => onFollow(s)}>Suivi</Button>}
                   {s.school_status === 'approved' && <Link className="btn btn-ghost" to={`/messages?avec=${s.profile_id}`}>Écrire</Link>}
                   {s.school_status === 'approved' && (
                     <ConfirmButton variant="ghost" message={`Retirer ${fullName(s.profile)} de l’établissement ? (son compte reste actif)`}
