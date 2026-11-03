@@ -497,3 +497,12 @@ textarea { resize: vertical; }
 .inline-form { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin-top: .6rem; }
 .inline-form input, .inline-form select { flex: 1 1 160px; }
 .link-btn { background: none; border: 0; padding: 0; color: var(--green-700); font: inherit; text-decoration: underline; cursor: pointer; }
+
+/* Identifiants d'un responsable créé par l'admin */
+.credentials { display: grid; gap: .45rem; background: var(--green-50); border: 1px solid var(--green-100); border-radius: 10px; padding: .9rem 1rem; margin-bottom: .8rem; }
+.credentials p { margin: 0; display: grid; grid-template-columns: 11rem 1fr; gap: .5rem; }
+.credentials span { color: var(--muted); font-size: .9rem; }
+.credentials .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 1.05rem; letter-spacing: .03em; }
+.create-account { margin-top: .9rem; border-top: 1px solid var(--line); padding-top: .7rem; }
+.create-account summary { cursor: pointer; margin-bottom: .6rem; }
+@media (max-width: 600px) { .credentials p { grid-template-columns: 1fr; gap: 0; } }

@@ -8,6 +8,7 @@ import { Avatar } from './ui';
 import { Logo } from './Logo';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useMySchools } from '../lib/schools';
+import { ForcePassword } from './ForcePassword';
 
 interface NavEntry { to: string; label: string; icon: string; end?: boolean; section?: string }
 
@@ -120,6 +121,7 @@ export function Layout() {
         </header>
         <main className="content">
           <ErrorBoundary resetKey={location.pathname}><Outlet /></ErrorBoundary>
+          <ForcePassword />
         </main>
       </div>
     </div>

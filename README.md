@@ -161,6 +161,10 @@ Pensez à ajouter l'URL de production dans les *Redirect URLs* de Supabase.
 
 - L'administrateur crée les établissements (menu *Établissements*) et nomme leur responsable par e-mail
   (`school_add_staff`). Le directeur nomme ensuite ses responsables de filière, limités à certaines classes.
+- L'administrateur peut aussi **créer le compte** du responsable (fonction Edge `admin-create-staff`) : compte actif
+  sans e-mail de confirmation, identifiant proposé `prenom.nom@nom-de-l-ecole.sn` (modifiable), mot de passe provisoire
+  affiché une seule fois sur une fiche à remettre ; changement obligatoire à la première connexion ; bouton
+  « Nouveau mot de passe » en cas d'oubli (un identifiant .sn ne reçoit pas d'e-mails).
 - À l'inscription (ou dans son profil), l'élève choisit son établissement partenaire ; le responsable le valide
   (`school_review_student`), ce qui active aussi son compte.
 - Menu *Mon école* : tableau de bord, élèves (validation, fiche, retrait), cours de l'école (réservés à ses élèves
