@@ -5,6 +5,7 @@ import { useLoad, useRefData } from '../../lib/hooks';
 import { INSTRUCTOR_TYPES, ROLE_LABEL, formatDate, fullName } from '../../lib/format';
 import type { Instructor, Profile, ProfileStatus, Role, Student } from '../../lib/types';
 import { useAuth } from '../../auth/AuthProvider';
+import { STAFF_TITLES } from '../../lib/schools';
 import { availabilitySummary, fetchAvailabilities } from '../../components/Availability';
 import { Badge, Button, Card, ConfirmButton, Empty, ErrorBox, Field, Modal, PageHeader, Spinner, Tabs, useAction } from '../../components/ui';
 
@@ -12,12 +13,15 @@ interface UserRow extends Profile {
   student: Student | null;
   instructor: Instructor | null;
 }
-type Tab = 'applications' | 'students' | 'instructors' | 'admins';
+// Validations séparées : élèves (CI → Tle), étudiants (L1 → M2), intervenants du scolaire / du supérieur,
+// responsables d'établissement (comptes créés par l'admin, plus mélangés aux intervenants)
+type Tab = 'eleves' | 'etudiants' | 'inst_scolaire' | 'inst_superieur' | 'staff' | 'admins';
+interface StaffRow { user_id: string; title: string; school: { name: string } | null }
 
 export function AdminUsers() {
   const { profile: me } = useAuth();
   const { data: ref } = useRefData();
-  const [tab, setTab] = useState<Tab>('applications');
+  const [tab, setTab] = useState<Tab>('eleves');
   const [q, setQ] = useState('');
   const [classFilter, setClassFilter] = useState('');
   const [rejecting, setRejecting] = useState<UserRow | null>(null);
@@ -25,18 +29,22 @@ export function AdminUsers() {
   const { run } = useAction();
 
   const { data, error, loading, reload } = useLoad(async () => {
-    const [users, subj, cls, contacts, availabilities] = await Promise.all([
+    const [users, subj, cls, contacts, availabilities, assigned, staff] = await Promise.all([
       supabase.from('profiles').select('*, student:students(*), instructor:instructors!instructors_profile_id_fkey(*)')
         .order('created_at', { ascending: false }).then(must),
       supabase.from('instructor_subjects').select('instructor_id, subject_id').then(must),
       supabase.from('instructor_classes').select('instructor_id, class_id').then(must),
       supabase.from('instructor_contacts').select('profile_id, phone').then(must),
       fetchAvailabilities(),
+      supabase.from('teaching_assignments').select('instructor_id, class_id').then(must),
+      supabase.from('school_staff').select('user_id, title, school:schools(name)').then(must),
     ]);
     return {
       users: users as unknown as UserRow[],
       wishSubjects: subj as { instructor_id: string; subject_id: number }[],
       wishClasses: cls as { instructor_id: string; class_id: number }[],
+      assigned: assigned as { instructor_id: string; class_id: number }[],
+      staff: staff as unknown as StaffRow[],
       phones: contacts as { profile_id: string; phone: string | null }[],
       availabilities,
     };
@@ -46,14 +54,35 @@ export function AdminUsers() {
   if (error || !data) return <ErrorBox error={error ?? ''} onRetry={reload} />;
 
   const match = (u: UserRow) => fullName(u).toLowerCase().includes(q.toLowerCase());
+  const cycleOf = (id?: number | null) => ref.classes.find((c) => c.id === id)?.cycle;
+  const staffOf = (id: string) => data.staff.filter((s) => s.user_id === id);
+  // Un intervenant est « du supérieur » si ses classes souhaitées ou affectées sont en L/M ; les deux si mixte ;
+  // sans classe précisée, il apparaît côté scolaire.
+  const instCycles = (id: string) => [...data.wishClasses, ...data.assigned].filter((w) => w.instructor_id === id).map((w) => cycleOf(w.class_id));
+  const higherInst = (id: string) => instCycles(id).includes('superieur');
+  const schoolInst = (id: string) => { const c = instCycles(id); return !c.length || c.some((x) => x !== 'superieur'); };
+  const pendingFirst = (a: UserRow, b: UserRow) => Number(b.status === 'pending') - Number(a.status === 'pending');
+  const learners = (higher: boolean) => data.users.filter((u) => u.role === 'student' && (cycleOf(u.student?.class_id) === 'superieur') === higher
+    && (!classFilter || String(u.student?.class_id) === classFilter)).sort(pendingFirst);
+  const teachers = (inGroup: (id: string) => boolean) =>
+    data.users.filter((u) => u.role === 'instructor' && !staffOf(u.id).length && inGroup(u.id));
   const lists: Record<Tab, UserRow[]> = {
-    applications: data.users.filter((u) => u.role === 'instructor' && u.instructor?.application_status !== 'approved'),
-    students: data.users.filter((u) => u.role === 'student' && (!classFilter || String(u.student?.class_id) === classFilter))
-      .sort((a, b) => Number(b.status === 'pending') - Number(a.status === 'pending')),
-    instructors: data.users.filter((u) => u.role === 'instructor' && u.instructor?.application_status === 'approved'),
+    eleves: learners(false),
+    etudiants: learners(true),
+    inst_scolaire: teachers(schoolInst),
+    inst_superieur: teachers(higherInst),
+    staff: data.users.filter((u) => staffOf(u.id).length),
     admins: data.users.filter((u) => u.role === 'admin'),
   };
-  const list = lists[tab].filter(match);
+  const all = lists[tab].filter(match);
+  const instructorTab = tab === 'inst_scolaire' || tab === 'inst_superieur';
+  const studentTab = tab === 'eleves' || tab === 'etudiants';
+  const applications = instructorTab ? all.filter((u) => u.instructor?.application_status !== 'approved') : [];
+  const list = instructorTab ? all.filter((u) => u.instructor?.application_status === 'approved') : all;
+  const pendingCount = (t: Tab) => t === 'inst_scolaire' || t === 'inst_superieur'
+    ? lists[t].filter((u) => u.instructor?.application_status === 'pending').length
+    : lists[t].filter((u) => u.status === 'pending').length;
+  const tabLabel = (t: Tab, label: string) => (pendingCount(t) ? `${label} · ${pendingCount(t)} à valider` : label);
   const className = (id?: number | null) => ref.classes.find((c) => c.id === id)?.code ?? '—';
   const wishes = (id: string) => ({
     subjects: data.wishSubjects.filter((w) => w.instructor_id === id).map((w) => ref.subjects.find((s) => s.id === w.subject_id)?.name),
@@ -64,8 +93,6 @@ export function AdminUsers() {
     must(await supabase.rpc('review_instructor', { p_instructor: u.id, p_decision: decision, p_reason: reason ?? null }));
     await reload();
   }, decision === 'approved' ? `${u.first_name} est maintenant intervenant. Pensez à l’affecter.` : 'Candidature refusée.');
-
-  const pendingStudents = data.users.filter((u) => u.role === 'student' && u.status === 'pending').length;
 
   const setStatus = (u: UserRow, status: 'active' | 'suspended') => run(async () => {
     must(await supabase.from('profiles').update({ status }).eq('id', u.id)); await reload();
@@ -82,25 +109,29 @@ export function AdminUsers() {
   return (
     <>
       <PageHeader title="Utilisateurs" subtitle="Validez les intervenants, gérez les comptes et protégez les données des élèves." />
-      <Tabs value={tab} onChange={setTab} tabs={[
-        { id: 'applications', label: 'Candidatures', count: lists.applications.filter((u) => u.instructor?.application_status === 'pending').length },
-        { id: 'students', label: pendingStudents ? `Élèves (${pendingStudents} à valider)` : 'Élèves', count: lists.students.length },
-        { id: 'instructors', label: 'Intervenants', count: lists.instructors.length },
+      <Tabs value={tab} onChange={(t) => { setTab(t); setClassFilter(''); }} tabs={[
+        { id: 'eleves', label: tabLabel('eleves', 'Élèves'), count: lists.eleves.length },
+        { id: 'etudiants', label: tabLabel('etudiants', 'Étudiants'), count: lists.etudiants.length },
+        { id: 'inst_scolaire', label: tabLabel('inst_scolaire', 'Intervenants du scolaire'), count: lists.inst_scolaire.length },
+        { id: 'inst_superieur', label: tabLabel('inst_superieur', 'Intervenants du supérieur'), count: lists.inst_superieur.length },
+        { id: 'staff', label: 'Responsables d’établissement', count: lists.staff.length },
         { id: 'admins', label: 'Administrateurs' },
       ]} />
       <div className="toolbar">
         <input placeholder="Rechercher un nom…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher" />
-        {tab === 'students' && (
+        {studentTab && (
           <select value={classFilter} onChange={(e) => setClassFilter(e.target.value)} aria-label="Filtrer par classe">
-            <option value="">Toutes les classes</option>
-            {ref.classes.map((c) => <option key={c.id} value={c.id}>{c.code}</option>)}
+            <option value="">{tab === 'etudiants' ? 'Tous les niveaux' : 'Toutes les classes'}</option>
+            {ref.classes.filter((c) => (c.cycle === 'superieur') === (tab === 'etudiants'))
+              .map((c) => <option key={c.id} value={c.id}>{c.code}</option>)}
           </select>
         )}
       </div>
 
-      {list.length === 0 ? <Card><Empty icon="👥" title="Aucun utilisateur" /></Card> : tab === 'applications' ? (
-        <div className="stack">
-          {list.map((u) => {
+      {applications.length > 0 && (
+        <div className="stack" style={{ marginBottom: '1.25rem' }}>
+          <h2 className="section-title">Candidatures à examiner</h2>
+          {applications.map((u) => {
             const w = wishes(u.id);
             return (
               <Card key={u.id}>
@@ -127,21 +158,26 @@ export function AdminUsers() {
             );
           })}
         </div>
-      ) : (
+      )}
+
+      {list.length === 0 ? (applications.length ? null : <Card><Empty icon="👥" title="Aucun utilisateur" /></Card>) : (
         <div className="table-wrap card">
+          {instructorTab && applications.length > 0 && <h2 className="section-title">Intervenants validés</h2>}
           <table className="table">
-            <thead><tr><th>Nom</th><th>{tab === 'students' ? 'Classe' : 'Profil'}</th><th>Statut</th><th>Inscrit le</th><th /></tr></thead>
+            <thead><tr><th>Nom</th><th>{studentTab ? (tab === 'etudiants' ? 'Niveau' : 'Classe') : tab === 'staff' ? 'Fonction' : 'Profil'}</th><th>Statut</th><th>Inscrit le</th><th /></tr></thead>
             <tbody>
               {list.map((u) => (
                 <tr key={u.id}>
                   <td><button className="link" onClick={() => setDetail(u)}><strong>{fullName(u)}</strong></button>
                     {u.id === me?.id && <> <Badge tone="info">Vous</Badge></>}</td>
-                  <td>{tab === 'students' ? className(u.student?.class_id)
-                    : tab === 'instructors' ? `${INSTRUCTOR_TYPES[u.instructor?.instructor_type ?? 'autre']} · ${u.instructor?.specialty ?? ''}` : ROLE_LABEL[u.role]}</td>
+                  <td>{studentTab ? className(u.student?.class_id)
+                    : instructorTab ? `${INSTRUCTOR_TYPES[u.instructor?.instructor_type ?? 'autre']} · ${u.instructor?.specialty ?? ''}`
+                    : tab === 'staff' ? staffOf(u.id).map((s) => `${STAFF_TITLES[s.title] ?? 'Responsable'} · ${s.school?.name ?? ''}`).join(' ; ')
+                    : ROLE_LABEL[u.role]}</td>
                   <td>{u.status === 'active' ? <Badge tone="success">Actif</Badge> : u.status === 'suspended' ? <Badge tone="danger">Suspendu</Badge> : <Badge tone="warning">En attente</Badge>}</td>
                   <td className="small">{formatDate(u.created_at)}</td>
                   <td className="row">
-                    {tab === 'instructors' && <Link className="btn btn-ghost" to={`/admin/affectations?intervenant=${u.id}`}>Affecter</Link>}
+                    {instructorTab && <Link className="btn btn-ghost" to={`/admin/affectations?intervenant=${u.id}`}>Affecter</Link>}
                     {u.role === 'student' && u.status === 'pending' && (
                       <Button onClick={() => void run(async () => {
                         must(await supabase.from('profiles').update({ status: 'active' }).eq('id', u.id)); await reload();

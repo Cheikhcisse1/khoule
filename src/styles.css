@@ -534,3 +534,8 @@ textarea { resize: vertical; }
 .next-step-text { flex: 1; min-width: 200px; display: grid; gap: .1rem; }
 .next-step-text small { color: var(--muted); font-weight: 700; font-size: .8rem; }
 @media (max-width: 860px) { .content { padding: 1rem; } .sidebar { padding-top: 1rem; } }
+
+/* Inscription : trois profils (élève, étudiant, enseignant) */
+.segmented-3 { grid-template-columns: repeat(3, 1fr); border-radius: 16px; }
+.segmented-3 button { border-radius: 12px; display: grid; gap: .1rem; line-height: 1.2; padding: .6rem .4rem; }
+.segmented-3 button small { font-weight: 600; font-size: .75rem; color: var(--muted); }

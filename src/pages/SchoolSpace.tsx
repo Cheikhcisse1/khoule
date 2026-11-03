@@ -5,14 +5,14 @@ import { must, supabase } from '../lib/supabase';
 import { useLoad, useRefData } from '../lib/hooks';
 import { COURSE_SELECT } from '../lib/queries';
 import { COURSE_FORMAT, formatDate, fullName } from '../lib/format';
-import { KIND_CYCLES, SCHOOL_KINDS, SCHOOL_STATUS, STAFF_TITLES, covers, loadMySchools, useMySchools } from '../lib/schools';
-import type { Announcement, Course, PersonName, SchoolStaff, Student } from '../lib/types';
+import { KIND_CYCLES, SCHOOL_KINDS, SCHOOL_STATUS, STAFF_TITLES, covers, isHigher, loadMySchools, useMySchools } from '../lib/schools';
+import type { Announcement, Course, PersonName, SchoolProgram, SchoolStaff, Student } from '../lib/types';
 import { CourseCard } from '../components/CourseBits';
 import {
   Badge, Button, Card, ConfirmButton, Empty, ErrorBox, Field, Modal, PageHeader, RichText, Spinner, StatCard, Tabs, useAction,
 } from '../components/ui';
 
-type Tab = 'dash' | 'students' | 'courses' | 'grades' | 'news' | 'team';
+type Tab = 'dash' | 'students' | 'programs' | 'courses' | 'grades' | 'news' | 'team';
 type SchoolStudent = Student & { profile: PersonName & { status: string } };
 interface GradeRow { student_id: string; score: number; max_score: number; course: { title: string } | null; assignment: { exercise: { title: string } | null } | null }
 
@@ -42,6 +42,8 @@ export function SchoolSpace() {
   }
   const st = mine.find((m) => m.school_id === schoolId) ?? mine[0];
   const director = st.scope === 'school';
+  // Université / école supérieure : on parle d'étudiants, le responsable gère des filières (pas des cours)
+  const higher = isHigher(st.school?.kind);
 
   return (
     <>
@@ -56,7 +58,8 @@ export function SchoolSpace() {
       />
       <Tabs value={tab} onChange={setTab} tabs={[
         { id: 'dash', label: '📊 Tableau de bord' },
-        { id: 'students', label: '🎒 Élèves' },
+        { id: 'students', label: higher ? '🎓 Étudiants' : '🎒 Élèves' },
+        ...(higher ? [{ id: 'programs' as Tab, label: '🧭 Filières' }] : []),
         { id: 'courses', label: '📚 Cours' },
         { id: 'grades', label: '📈 Notes' },
         { id: 'news', label: '📢 Annonces' },
@@ -72,12 +75,13 @@ export function SchoolSpace() {
 function SchoolPanels({ st, tab, setTab, uid }: { st: SchoolStaff; tab: Tab; setTab: (t: Tab) => void; uid: string }) {
   const { data: ref } = useRefData();
   const { data, error, loading, reload } = useLoad(async () => {
-    const [students, courses] = await Promise.all([
+    const [students, courses, programs] = await Promise.all([
       supabase.from('students')
         .select('*, profile:profiles(first_name,last_name,status)')
         .eq('school_id', st.school_id).then(must),
       supabase.from('courses').select(COURSE_SELECT).eq('school_id', st.school_id)
         .order('created_at', { ascending: false }).then(must),
+      supabase.from('school_programs').select('*').eq('school_id', st.school_id).order('name').then(must),
     ]);
     const list = (students as unknown as SchoolStudent[])
       .sort((a, b) => fullName(a.profile).localeCompare(fullName(b.profile)));
@@ -87,7 +91,7 @@ function SchoolPanels({ st, tab, setTab, uid }: { st: SchoolStaff; tab: Tab; set
           .select('student_id, score, max_score, course:courses(title), assignment:assignments(exercise:exercises(title))')
           .in('student_id', approved)) as unknown as GradeRow[]
       : [];
-    return { students: list, courses: courses as unknown as Course[], grades };
+    return { students: list, courses: courses as unknown as Course[], grades, programs: programs as SchoolProgram[] };
   }, [st.school_id]);
 
   if (loading || !ref) return <Spinner />;
@@ -100,20 +104,24 @@ function SchoolPanels({ st, tab, setTab, uid }: { st: SchoolStaff; tab: Tab; set
   const pending = data.students.filter((s) => s.school_status === 'pending');
   const approved = data.students.filter((s) => s.school_status === 'approved');
   const avg = (rows: GradeRow[]) => rows.length ? rows.reduce((t, g) => t + (Number(g.score) / Number(g.max_score)) * 20, 0) / rows.length : null;
+  const higher = isHigher(st.school?.kind);
+  const learner = higher ? 'étudiant' : 'élève';
   const fmt20 = (v: number | null) => (v == null ? '—' : `${(Math.round(v * 10) / 10).toString().replace('.', ',')}/20`);
 
   if (tab === 'dash') {
     return (
       <>
         <div className="stats">
-          <StatCard icon="🎒" label="Élèves validés" value={approved.length} />
+          <StatCard icon={higher ? '🎓' : '🎒'} label={higher ? 'Étudiants validés' : 'Élèves validés'} value={approved.length} />
           <StatCard icon="⏳" label="Inscriptions à valider" value={pending.length} tone="gold" />
-          <StatCard icon="📚" label="Cours de l’école" value={data.courses.length} tone="blue" />
+          {higher
+            ? <StatCard icon="🧭" label="Filières" value={data.programs.length} tone="blue" />
+            : <StatCard icon="📚" label="Cours de l’école" value={data.courses.length} tone="blue" />}
           <StatCard icon="📈" label="Moyenne des devoirs" value={fmt20(avg(data.grades))} tone="clay" />
         </div>
         {pending.length > 0 && (
           <div className="alert alert-info">
-            {pending.length} élève(s) attendent votre validation. <button className="link-btn" onClick={() => setTab('students')}>Les voir</button>
+            {pending.length} {learner}(s) attendent votre validation. <button className="link-btn" onClick={() => setTab('students')}>Les voir</button>
           </div>
         )}
         <Card title="Effectifs par classe">
@@ -123,19 +131,21 @@ function SchoolPanels({ st, tab, setTab, uid }: { st: SchoolStaff; tab: Tab; set
                 const ids = approved.filter((s) => s.class_id === c.id).map((s) => s.profile_id);
                 return (
                   <li key={c.id} className="list-row">
-                    <span><strong>{c.name}</strong> · {ids.length} élève(s)</span>
+                    <span><strong>{c.name}</strong> · {ids.length} {learner}(s)</span>
                     <span className="muted small">Moyenne {fmt20(avg(data.grades.filter((g) => ids.includes(g.student_id))))}</span>
                   </li>
                 );
               })}
             </ul>
-          ) : <Empty icon="🎒" title="Aucun élève validé pour l’instant" />}
+          ) : <Empty icon="🎒" title={`Aucun ${learner} validé pour l’instant`} />}
         </Card>
       </>
     );
   }
 
-  if (tab === 'students') return <StudentsPanel st={st} students={data.students} cls={cls} onChange={reload} />;
+  if (tab === 'students') return <StudentsPanel st={st} students={data.students} cls={cls} programs={data.programs} onChange={reload} />;
+
+  if (tab === 'programs') return <ProgramsPanel st={st} programs={data.programs} students={data.students} myClasses={myClasses} onChange={reload} />;
 
   if (tab === 'courses') return <CoursesPanel st={st} courses={data.courses} myClasses={myClasses} onChange={reload} />;
 
@@ -178,8 +188,9 @@ function SchoolPanels({ st, tab, setTab, uid }: { st: SchoolStaff; tab: Tab; set
 }
 
 // ---------------------------------------------------------------------------
-function StudentsPanel({ st, students, cls, onChange }:
-  { st: SchoolStaff; students: SchoolStudent[]; cls: (id: number | null) => { code: string; name: string } | undefined; onChange: () => Promise<void> }) {
+function StudentsPanel({ st, students, cls, programs, onChange }:
+  { st: SchoolStaff; students: SchoolStudent[]; cls: (id: number | null) => { code: string; name: string } | undefined;
+    programs: SchoolProgram[]; onChange: () => Promise<void> }) {
   const { run } = useAction();
   const [filter, setFilter] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const list = students.filter((s) => s.school_status === filter);
@@ -203,6 +214,7 @@ function StudentsPanel({ st, students, cls, onChange }:
               <div className="list-row">
                 <div>
                   <strong>{fullName(s.profile)}</strong> <Badge>{cls(s.class_id)?.name ?? '—'}</Badge>{' '}
+                  {s.program_id && <><Badge tone="info">{programs.find((pr) => pr.id === s.program_id)?.name ?? 'Filière'}</Badge>{' '}</>}
                   <Badge tone={s.school_status === 'approved' ? 'success' : s.school_status === 'pending' ? 'warning' : 'neutral'}>{SCHOOL_STATUS[s.school_status ?? 'pending']}</Badge>
                   {s.profile.status === 'pending' && <span className="small muted"> · compte en attente (votre validation l’active)</span>}
                 </div>
@@ -241,11 +253,15 @@ function StudentsPanel({ st, students, cls, onChange }:
 function CoursesPanel({ st, courses, myClasses, onChange }:
   { st: SchoolStaff; courses: Course[]; myClasses: { id: number; code: string; name: string }[]; onChange: () => Promise<void> }) {
   const [open, setOpen] = useState(false);
+  // Supérieur : les cours sont créés par les professeurs ; le responsable organise les filières
+  const higher = isHigher(st.school?.kind);
   return (
     <>
       <div className="row" style={{ justifyContent: 'space-between', marginBottom: '1rem' }}>
-        <p className="muted" style={{ margin: 0 }}>Cours réservés aux élèves validés de l’établissement. Vous pouvez les modifier, les publier et suivre les élèves.</p>
-        <Button onClick={() => setOpen(true)}>+ Nouveau cours</Button>
+        <p className="muted" style={{ margin: 0 }}>{higher
+          ? 'Les cours, TD et TP sont créés par les professeurs. Vous suivez ici ceux de votre établissement ; organisez vos filières dans l’onglet Filières.'
+          : 'Cours réservés aux élèves validés de l’établissement. Vous pouvez les modifier, les publier et suivre les élèves.'}</p>
+        {!higher && <Button onClick={() => setOpen(true)}>+ Nouveau cours</Button>}
       </div>
       {courses.length
         ? <div className="course-grid">{courses.map((c) => <CourseCard key={c.id} course={c} />)}</div>
@@ -316,6 +332,71 @@ function SchoolCourseModal({ st, myClasses, onClose, onDone }:
         </div>
       </form>
     </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
+function ProgramsPanel({ st, programs, students, myClasses, onChange }:
+  { st: SchoolStaff; programs: SchoolProgram[]; students: SchoolStudent[]; myClasses: { id: number; code: string; name: string }[]; onChange: () => Promise<void> }) {
+  const director = st.scope === 'school';
+  const [f, setF] = useState({ name: '', classes: [] as number[] });
+  const { busy, run } = useAction();
+  const toggle = (id: number) => setF((s) => ({ ...s, classes: s.classes.includes(id) ? s.classes.filter((x) => x !== id) : [...s.classes, id] }));
+  const code = (id: number) => myClasses.find((c) => c.id === id)?.code ?? '';
+
+  const add = (e: FormEvent) => {
+    e.preventDefault();
+    void run(async () => {
+      if (!f.classes.length) throw new Error('Choisissez au moins un niveau (L1, L2…).');
+      must(await supabase.from('school_programs').insert({ school_id: st.school_id, name: f.name.trim(), class_ids: f.classes }));
+      setF({ name: '', classes: [] });
+      await onChange();
+    }, 'Filière créée : les étudiants peuvent la choisir à l’inscription.');
+  };
+
+  return (
+    <div className="split">
+      <Card title="Filières de l’établissement">
+        {programs.length ? (
+          <ul className="list">
+            {programs.map((pr) => (
+              <li key={pr.id} className="list-row">
+                <span><strong>{pr.name}</strong>
+                  <span className="small muted"> · {pr.class_ids.map(code).join(', ') || 'tous niveaux'}
+                    {' · '}{students.filter((s) => s.program_id === pr.id && s.school_status === 'approved').length} étudiant(s)</span></span>
+                {director && (
+                  <ConfirmButton variant="ghost" message={`Supprimer la filière « ${pr.name} » ? Les étudiants restent dans l’établissement, sans filière.`}
+                    onConfirm={() => void run(async () => {
+                      must(await supabase.from('school_programs').delete().eq('id', pr.id)); await onChange();
+                    }, 'Filière supprimée.')}>Supprimer</ConfirmButton>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : <Empty icon="🧭" title="Aucune filière pour l’instant">Ex. : Licence Informatique, Master Droit des affaires.</Empty>}
+      </Card>
+      {director ? (
+        <Card title="Créer une filière">
+          <form className="form" onSubmit={add}>
+            <Field label="Nom de la filière" required>
+              <input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} required minLength={2} placeholder="Ex. : Licence Informatique" />
+            </Field>
+            <fieldset className="fieldset">
+              <legend>Niveaux ouverts</legend>
+              <div className="chips">
+                {myClasses.map((c) => (
+                  <label key={c.id} className={`chip ${f.classes.includes(c.id) ? 'on' : ''}`}>
+                    <input type="checkbox" checked={f.classes.includes(c.id)} onChange={() => toggle(c.id)} />{c.code}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <Button type="submit" loading={busy}>Créer la filière</Button>
+            <p className="small muted">Les cours, TD et TP sont créés par les professeurs, pas par la direction.</p>
+          </form>
+        </Card>
+      ) : <Card><p className="muted">Seule la direction de l’établissement crée et supprime les filières.</p></Card>}
+    </div>
   );
 }
 

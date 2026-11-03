@@ -2,7 +2,9 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase, translateError } from '../lib/supabase';
-import { ROLE_LABEL, formatDate } from '../lib/format';
+import { formatDate } from '../lib/format';
+import { roleLabel, useMySchools } from '../lib/schools';
+import { useRefData } from '../lib/hooks';
 import { Avatar, Badge, Button, Card, Field, PageHeader, useAction } from '../components/ui';
 import { IdentityForm, InstructorProfileForm, StudentProfileForm } from '../components/ProfileForms';
 import { AvailabilityEditor } from '../components/Availability';
@@ -10,7 +12,9 @@ import { MfaSettings } from '../components/Mfa';
 import { checkPassword } from '../lib/password';
 
 export function ProfilePage() {
-  const { profile, session } = useAuth();
+  const { profile, session, student } = useAuth();
+  const { data: mySchools } = useMySchools(profile?.id);
+  const { data: refData } = useRefData();
   const [password, setPassword] = useState('');
   const { busy, run } = useAction();
   const { hash } = useLocation();
@@ -45,7 +49,7 @@ export function ProfilePage() {
             <h2 className="qa-title">{profile.first_name} {profile.last_name}</h2>
             <span className="muted small">{session?.user.email} · membre depuis le {formatDate(profile.created_at)}</span>
           </div>
-          <Badge tone="info">{ROLE_LABEL[profile.role]}</Badge>
+          <Badge tone="info">{roleLabel(profile.role, { staff: mySchools, higherEd: refData?.classes.find((c) => c.id === student?.class_id)?.cycle === 'superieur' })}</Badge>
         </div>
       </Card>
       <Card title="Identité"><IdentityForm /></Card>

@@ -35,7 +35,8 @@ export function Landing() {
             accompagnent les élèves de la CI à la Terminale et les étudiants jusqu’au Master — en salle comme en ligne.
           </p>
           <div className="hero-cta">
-            <Link to="/inscription?profil=eleve" className="btn btn-primary btn-lg">Je suis élève ou étudiant</Link>
+            <Link to="/inscription?profil=eleve" className="btn btn-primary btn-lg">Je suis élève</Link>
+            <Link to="/inscription?profil=etudiant" className="btn btn-primary btn-lg">Je suis étudiant</Link>
             <Link to="/inscription?profil=intervenant" className="btn btn-ghost btn-lg">Je veux enseigner</Link>
           </div>
         </div>

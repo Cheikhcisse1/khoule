@@ -41,6 +41,16 @@ export interface Student {
   consent_at: string | null;
   school_id: string | null;
   school_status: 'pending' | 'approved' | 'rejected' | null;
+  program_id: string | null;
+}
+
+/** Filière d'une université ou école supérieure */
+export interface SchoolProgram {
+  id: string;
+  school_id: string;
+  name: string;
+  class_ids: number[];
+  created_at: string;
 }
 
 export interface School {

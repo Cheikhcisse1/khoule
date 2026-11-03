@@ -2,12 +2,13 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase } from '../lib/supabase';
-import { ROLE_LABEL, fullName, timeAgo } from '../lib/format';
+import { fullName, timeAgo } from '../lib/format';
 import type { AppNotification, Role } from '../lib/types';
 import { Avatar } from './ui';
 import { Logo } from './Logo';
 import { ErrorBoundary } from './ErrorBoundary';
-import { useMySchools } from '../lib/schools';
+import { roleLabel, useMySchools } from '../lib/schools';
+import { useRefData } from '../lib/hooks';
 import { ForcePassword } from './ForcePassword';
 
 interface NavEntry { to: string; label: string; icon: string; end?: boolean; section?: string }
@@ -62,7 +63,8 @@ export function Icon({ name }: { name: string }) {
 }
 
 export function Layout() {
-  const { profile, signOut } = useAuth();
+  const { profile, student, signOut } = useAuth();
+  const { data: ref } = useRefData();
   const [menuOpen, setMenuOpen] = useState(false);
   const [q, setQ] = useState('');
   const navigate = useNavigate();
@@ -121,7 +123,7 @@ export function Layout() {
             <Avatar person={profile} size={34} />
             <span className="user-chip-text">
               <strong>{fullName(profile)}</strong>
-              <small>{ROLE_LABEL[profile.role]}</small>
+              <small>{roleLabel(profile.role, { staff: mySchools, higherEd: ref?.classes.find((c) => c.id === student?.class_id)?.cycle === 'superieur' })}</small>
             </span>
           </Link>
         </header>

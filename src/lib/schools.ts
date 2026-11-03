@@ -57,3 +57,15 @@ export const KIND_CYCLES: Record<string, string[] | null> = {
 /** Le responsable couvre-t-il cette classe de cette école ? (affichage seulement ; la base vérifie aussi) */
 export const covers = (st: SchoolStaff | undefined, classId: number | null | undefined) =>
   !!st && (st.scope === 'school' || (classId != null && st.class_ids.includes(classId)));
+
+/** Universités et écoles supérieures : le responsable crée des filières, pas des cours. */
+export const HIGHER_KINDS = ['universite', 'ecole_superieure'];
+export const isHigher = (kind?: string | null) => !!kind && HIGHER_KINDS.includes(kind);
+
+/** Libellé affiché à côté du nom : fonction du responsable, « Étudiant » pour le supérieur, sinon le rôle. */
+export function roleLabel(role: string, opts: { staff?: SchoolStaff[] | null; higherEd?: boolean } = {}): string {
+  const st = opts.staff?.[0];
+  if (st) return `${STAFF_TITLES[st.title] ?? 'Responsable'}${st.school?.name ? ` · ${st.school.name}` : ''}`;
+  if (role === 'student') return opts.higherEd ? 'Étudiant' : 'Élève';
+  return role === 'admin' ? 'Administrateur' : 'Intervenant';
+}
