@@ -19,12 +19,6 @@ async function staffAccount(body: Record<string, unknown>): Promise<Credentials>
   return data as Credentials;
 }
 
-/** « Lycée de Khoulé » → « lycee-de-khoule » ; « Awa Ndiaye » → « awa.ndiaye » (même règle que le serveur) */
-const slug = (s: string, sep: '-' | '.' = '-') => {
-  const out = s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, sep);
-  return sep === '-' ? out.replace(/^-+|-+$/g, '') : out.replace(/^\.+|\.+$/g, '');
-};
-
 /** Fiche à remettre au responsable : identifiants affichés une seule fois. */
 function CredentialsModal({ c, onClose }: { c: Credentials; onClose: () => void }) {
   const site = window.location.origin;
@@ -113,14 +107,12 @@ function SchoolCard({ school, onChange }: { school: Row; onChange: () => Promise
   const [creds, setCreds] = useState<Credentials | null>(null);
   const { busy, run } = useAction();
   const create = useAction();
-  // Identifiant proposé : prenom.nom@nom-de-l-ecole.sn (modifiable)
-  const suggested = nf.first_name.trim() && nf.last_name.trim()
-    ? `${slug(`${nf.first_name} ${nf.last_name}`, '.')}@${slug(school.name)}.sn` : '';
+  const [emailFor, setEmailFor] = useState<SchoolStaff | null>(null);
 
   const createAccount = (e: FormEvent) => {
     e.preventDefault();
     void create.run(async () => {
-      setCreds(await staffAccount({ action: 'create', school_id: school.id, ...nf, email: nf.email.trim() || undefined }));
+      setCreds(await staffAccount({ action: 'create', school_id: school.id, ...nf, email: nf.email.trim() }));
       setNf({ first_name: '', last_name: '', title: 'directeur', email: '' });
       await onChange();
     }, 'Compte créé et rattaché à l’établissement.');
@@ -161,6 +153,7 @@ function SchoolCard({ school, onChange }: { school: Row; onChange: () => Promise
                     const c = await staffAccount({ action: 'reset', user_id: st.user_id });
                     setCreds({ ...c, name: fullName(st.profile), school: school.name });
                   })}>Nouveau mot de passe</ConfirmButton>
+                <Button variant="ghost" onClick={() => setEmailFor(st)}>Changer l’adresse</Button>
                 <ConfirmButton variant="ghost" message="Retirer ce responsable ?" onConfirm={() => void run(async () => {
                   must(await supabase.rpc('school_remove_staff', { p_school: school.id, p_user: st.user_id })); await onChange();
                 }, 'Responsable retiré.')}>Retirer</ConfirmButton>
@@ -190,16 +183,43 @@ function SchoolCard({ school, onChange }: { school: Row; onChange: () => Promise
                 {['directeur', 'proviseur', 'principal', 'doyen', 'autre'].map((k) => <option key={k} value={k}>{STAFF_TITLES[k]}</option>)}
               </select>
             </Field>
-            <Field label="Identifiant de connexion" hint={suggested ? `Laissez vide pour : ${suggested}` : 'Proposé automatiquement : prenom.nom@nom-de-l-ecole.sn'}>
-              <input type="email" value={nf.email} onChange={(e) => setNf({ ...nf, email: e.target.value })} placeholder={suggested || 'prenom.nom@ecole.sn'} />
+            <Field label="Son adresse e-mail" required hint="Sa vraie adresse (Gmail, e-mail de l’école…) : elle sert d’identifiant et reçoit « mot de passe oublié »">
+              <input type="email" value={nf.email} onChange={(e) => setNf({ ...nf, email: e.target.value })} required placeholder="prenom.nom@gmail.com" />
             </Field>
           </div>
           <Button type="submit" loading={create.busy}>Créer le compte et afficher ses identifiants</Button>
-          <p className="small muted">Le compte est actif tout de suite, sans e-mail de confirmation. Un identifiant en « .sn » sert seulement à se connecter :
-            il ne reçoit pas d’e-mails, utilisez « Nouveau mot de passe » en cas d’oubli. Vous pouvez aussi saisir sa vraie adresse e-mail.</p>
+          <p className="small muted">Le compte est actif tout de suite, sans e-mail de confirmation. N’inventez pas d’adresse :
+            le propriétaire du domaine pourrait demander un nouveau mot de passe et prendre le compte.</p>
         </form>
       </details>
       {creds && <CredentialsModal c={creds} onClose={() => setCreds(null)} />}
+      {emailFor && <EmailModal st={emailFor} onClose={() => setEmailFor(null)} />}
     </Card>
+  );
+}
+
+/** Remplacer l'adresse (identifiant) d'un responsable, par exemple une ancienne adresse inventée. */
+function EmailModal({ st, onClose }: { st: SchoolStaff; onClose: () => void }) {
+  const [email, setEmail] = useState('');
+  const { busy, run } = useAction();
+  const save = (e: FormEvent) => {
+    e.preventDefault();
+    void run(async () => {
+      await staffAccount({ action: 'set_email', user_id: st.user_id, email: email.trim() });
+      onClose();
+    }, `Adresse mise à jour : ${fullName(st.profile)} se connecte désormais avec ${email.trim()}.`);
+  };
+  return (
+    <Modal open onClose={onClose} title={`Adresse de ${fullName(st.profile)}`}>
+      <form className="form" onSubmit={save}>
+        <Field label="Nouvelle adresse e-mail" required hint="Sa vraie adresse : elle devient son identifiant de connexion (son mot de passe ne change pas)">
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
+        </Field>
+        <div className="modal-actions">
+          <Button type="button" variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button type="submit" loading={busy}>Enregistrer</Button>
+        </div>
+      </form>
+    </Modal>
   );
 }

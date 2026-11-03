@@ -1,7 +1,9 @@
 // Edge Function : l'administrateur crée le compte d'un responsable d'établissement (directeur, proviseur…)
-// et obtient ses identifiants à lui remettre. Identifiant proposé : prenom.nom@nom-de-l-ecole.sn
-//  - action "create" : compte confirmé et actif, rattaché à l'école comme responsable
-//  - action "reset"  : nouveau mot de passe provisoire pour un responsable d'établissement
+// et obtient ses identifiants à lui remettre. L'identifiant est la VRAIE adresse e-mail du responsable :
+// une adresse inventée (domaine qu'on ne possède pas) permettrait à son propriétaire de réinitialiser le mot de passe.
+//  - action "create"    : compte confirmé et actif, rattaché à l'école comme responsable
+//  - action "reset"     : nouveau mot de passe provisoire pour un responsable d'établissement
+//  - action "set_email" : remplacer l'adresse d'un responsable (ex. ancienne adresse inventée)
 // Le responsable doit choisir son propre mot de passe à la première connexion (must_change_password).
 // La clé service_role reste côté serveur (fournie automatiquement par Supabase).
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4';
@@ -26,10 +28,6 @@ function tempPassword(): string {
   };
   return `${pick(ALPHA, 5)}-${pick(DIGITS, 3)}-${pick(ALPHA + DIGITS, 5)}`;
 }
-
-/** « Lycée de Khoulé » → « lycee-de-khoule » ; « Awa Ndiaye » → « awa.ndiaye » */
-const slug = (s: string, sep = '-') => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
-  .replace(/[^a-z0-9]+/g, sep).replace(new RegExp(`^\\${sep}+|\\${sep}+$`, 'g'), '');
 
 Deno.serve(async (req) => {
   const h = cors(req.headers.get('origin'));
@@ -65,6 +63,18 @@ Deno.serve(async (req) => {
       return json({ email: u.user.email, password });
     }
 
+    // ---------- Changer l'adresse d'un responsable ----------
+    if (body.action === 'set_email') {
+      const email = String(body.email ?? '').trim().toLowerCase();
+      if (typeof body.user_id !== 'string') return json({ error: 'Responsable manquant' }, 400);
+      if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(email)) return json({ error: 'Adresse e-mail invalide' }, 400);
+      const { data: st } = await admin.from('school_staff').select('user_id').eq('user_id', body.user_id).limit(1);
+      if (!st?.length) return json({ error: 'Ce compte n’est responsable d’aucun établissement' }, 400);
+      const { error } = await admin.auth.admin.updateUserById(body.user_id, { email, email_confirm: true });
+      if (error) return json({ error: /already|registered|exists/i.test(error.message) ? 'Cette adresse est déjà utilisée par un autre compte.' : error.message }, 400);
+      return json({ email });
+    }
+
     // ---------- Création du compte ----------
     if (body.action !== 'create') return json({ error: 'Action inconnue' }, 400);
     const first = String(body.first_name ?? '').trim();
@@ -74,26 +84,18 @@ Deno.serve(async (req) => {
     const { data: school } = await admin.from('schools').select('id, name').eq('id', body.school_id).maybeSingle();
     if (!school) return json({ error: 'Établissement introuvable' }, 404);
 
-    let email = String(body.email ?? '').trim().toLowerCase();
-    const custom = !!email;
-    if (!email) email = `${slug(`${first} ${last}`, '.')}@${slug(school.name)}.sn`;
-    if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(email)) return json({ error: 'Adresse e-mail invalide' }, 400);
+    const email = String(body.email ?? '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(email)) return json({ error: 'Saisissez la vraie adresse e-mail du responsable' }, 400);
 
     const password = tempPassword();
-    let created = null;
-    for (let i = 0; i < 5 && !created; i++) {
-      // Identifiant proposé déjà pris : on ajoute un numéro (awa.ndiaye2@…) ; adresse choisie : on s'arrête
-      const tryEmail = i === 0 ? email : email.replace('@', `${i + 1}@`);
-      const { data, error } = await admin.auth.admin.createUser({
-        email: tryEmail, password, email_confirm: true,
-        user_metadata: { role: 'instructor', first_name: first, last_name: last, must_change_password: true, created_by_admin: true },
-      });
-      if (!error) { created = data.user; email = tryEmail; break; }
-      if (custom || !/already|registered|exists/i.test(error.message)) {
-        return json({ error: /already|registered|exists/i.test(error.message) ? 'Un compte existe déjà avec cette adresse : utilisez « Nommer » avec cet e-mail.' : error.message }, 400);
-      }
+    const { data, error } = await admin.auth.admin.createUser({
+      email, password, email_confirm: true,
+      user_metadata: { role: 'instructor', first_name: first, last_name: last, must_change_password: true, created_by_admin: true },
+    });
+    if (error) {
+      return json({ error: /already|registered|exists/i.test(error.message) ? 'Un compte existe déjà avec cette adresse : utilisez « Nommer » avec cet e-mail.' : error.message }, 400);
     }
-    if (!created) return json({ error: 'Impossible de trouver un identifiant libre' }, 400);
+    const created = data.user;
 
     // 2. Compte actif et validé (pas de candidature à examiner), rattaché à l'école
     await admin.from('profiles').update({ status: 'active' }).eq('id', created.id);
