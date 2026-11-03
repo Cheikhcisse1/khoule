@@ -157,6 +157,20 @@ Pensez à ajouter l'URL de production dans les *Redirect URLs* de Supabase.
 - Fichiers dans des buckets **privés**, accès contrôlé par dossier, ouverture via URL signée de 60 s.
 - Comptes suspendus : perte immédiate de tout accès (vérifié à chaque requête).
 
+### Assistant IA (gratuit)
+
+- **Coup de pouce** (élève, page `/assistant`, boutons sur les cours et les devoirs) : guide pas à pas sans donner
+  la réponse, refuse le hors-scolaire, ne demande aucune donnée personnelle, oriente vers un adulte en cas de détresse ;
+  bouton « Demander à mon intervenant ».
+- **Assistant pédagogique** (intervenant) : préparation de séances, exercices corrigés, explications différenciées.
+- **Pré-correction Stylo Rouge** (fenêtre de correction) : note + commentaires question par question à partir de la
+  consigne, du texte et de 3 photos maximum (pas les PDF) ; l'intervenant relit avant d'enregistrer.
+- Edge Function `supabase/functions/ai` : Groq (`openai/gpt-oss-120b`, photos `qwen/qwen3.8-27b`), secours Gemini si
+  le secret `GEMINI_API_KEY` existe. Secret requis : `GROQ_API_KEY`. Lectures avec la RLS de l'appelant.
+- Quotas quotidiens (offre gratuite Groq) : 30 questions par élève, 100 par intervenant (`AI_LIMIT_STUDENT`,
+  `AI_LIMIT_STAFF`) ; un appel en échec n'est pas décompté. Historique (`ai_messages`) visible par son auteur et
+  l'admin, effaçable par l'auteur, purgé après 90 jours (`ai_cleanup()`).
+
 ## 7. Tests
 
 **Tests de sécurité de la base** (PostgreSQL jetable dans Docker, 12 scénarios / ~40 assertions :
