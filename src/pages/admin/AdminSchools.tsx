@@ -1,0 +1,110 @@
+import { useState, type FormEvent } from 'react';
+import { must, supabase } from '../../lib/supabase';
+import { useLoad } from '../../lib/hooks';
+import { fullName } from '../../lib/format';
+import { SCHOOL_KINDS, STAFF_TITLES } from '../../lib/schools';
+import type { School, SchoolStaff } from '../../lib/types';
+import { Badge, Button, Card, ConfirmButton, Empty, ErrorBox, Field, PageHeader, Spinner, useAction } from '../../components/ui';
+
+type Row = School & { staff: SchoolStaff[]; students: { count: number }[] };
+
+/** Administration générale : créer les établissements et nommer leurs responsables (directeur, proviseur…). */
+export function AdminSchools() {
+  const [f, setF] = useState({ name: '', kind: 'lycee', city: '' });
+  const { busy, run } = useAction();
+  const { data, error, loading, reload } = useLoad(async () =>
+    must(await supabase.from('schools')
+      .select('*, staff:school_staff(school_id, user_id, title, scope, class_ids, profile:profiles(first_name,last_name)), students(count)')
+      .order('name')) as unknown as Row[], []);
+
+  if (loading) return <Spinner />;
+  if (error || !data) return <ErrorBox error={error ?? ''} onRetry={reload} />;
+
+  const create = (e: FormEvent) => {
+    e.preventDefault();
+    void run(async () => {
+      must(await supabase.from('schools').insert({ name: f.name.trim(), kind: f.kind, city: f.city.trim() || null }));
+      setF({ name: '', kind: 'lycee', city: '' });
+      await reload();
+    }, 'Établissement créé. Nommez maintenant son responsable.');
+  };
+
+  return (
+    <>
+      <PageHeader title="Établissements" subtitle="Chaque établissement a son espace : ses responsables ne voient et ne gèrent que leur école." />
+      <div className="split">
+        <Card title="Nouvel établissement">
+          <form className="form" onSubmit={create}>
+            <Field label="Nom" required><input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} required minLength={2} placeholder="Ex. : Lycée de Khoulé, Université Cheikh Anta Diop" /></Field>
+            <div className="grid-2">
+              <Field label="Type">
+                <select value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value })}>
+                  {Object.entries(SCHOOL_KINDS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+              </Field>
+              <Field label="Ville"><input value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })} placeholder="Ex. : Khoulé, Dakar" /></Field>
+            </div>
+            <Button type="submit" loading={busy}>Créer l’établissement</Button>
+          </form>
+        </Card>
+        <section className="stack">
+          {data.length === 0 && <Card><Empty icon="🏫" title="Aucun établissement pour l’instant" /></Card>}
+          {data.map((s) => <SchoolCard key={s.id} school={s} onChange={reload} />)}
+        </section>
+      </div>
+    </>
+  );
+}
+
+function SchoolCard({ school, onChange }: { school: Row; onChange: () => Promise<void> }) {
+  const [f, setF] = useState({ email: '', title: 'directeur' });
+  const { busy, run } = useAction();
+
+  const addDirector = (e: FormEvent) => {
+    e.preventDefault();
+    void run(async () => {
+      const name = must(await supabase.rpc('school_add_staff', {
+        p_school: school.id, p_email: f.email, p_title: f.title, p_scope: 'school', p_class_ids: [],
+      })) as string;
+      setF({ email: '', title: 'directeur' });
+      await onChange();
+      return name;
+    }, 'Responsable nommé : son espace école est disponible.');
+  };
+
+  return (
+    <Card title={<>🏫 {school.name}</>} actions={
+      <ConfirmButton variant="ghost" message={`Supprimer « ${school.name} » ? Ses cours d’école seront supprimés et ses élèves détachés.`}
+        onConfirm={() => void run(async () => { must(await supabase.from('schools').delete().eq('id', school.id)); await onChange(); }, 'Établissement supprimé.')}>
+        🗑️
+      </ConfirmButton>
+    }>
+      <p className="small muted">
+        <Badge>{SCHOOL_KINDS[school.kind]}</Badge> {school.city ?? ''} · {school.students?.[0]?.count ?? 0} élève(s) rattaché(s)
+      </p>
+      <h4 className="section-title">Responsables</h4>
+      {school.staff.length ? (
+        <ul className="list">
+          {school.staff.map((st) => (
+            <li key={st.user_id} className="row" style={{ justifyContent: 'space-between' }}>
+              <span><strong>{fullName(st.profile)}</strong> · {STAFF_TITLES[st.title] ?? st.title}
+                {st.scope === 'classes' && <span className="muted small"> (classes limitées)</span>}</span>
+              <ConfirmButton variant="ghost" message="Retirer ce responsable ?" onConfirm={() => void run(async () => {
+                must(await supabase.rpc('school_remove_staff', { p_school: school.id, p_user: st.user_id })); await onChange();
+              }, 'Responsable retiré.')}>Retirer</ConfirmButton>
+            </li>
+          ))}
+        </ul>
+      ) : <p className="muted small">Aucun responsable : nommez le directeur ou le proviseur.</p>}
+      <form className="inline-form" onSubmit={addDirector}>
+        <input type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} required
+          placeholder="E-mail de son compte Khoulé" aria-label="E-mail du responsable" />
+        <select value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} aria-label="Fonction">
+          {['directeur', 'proviseur', 'principal', 'doyen', 'autre'].map((k) => <option key={k} value={k}>{STAFF_TITLES[k]}</option>)}
+        </select>
+        <Button type="submit" loading={busy}>Nommer</Button>
+      </form>
+      <p className="small muted">La personne doit déjà avoir un compte actif (élève exclu de préférence : intervenant ou administrateur). Elle verra « Mon école » dans son menu.</p>
+    </Card>
+  );
+}

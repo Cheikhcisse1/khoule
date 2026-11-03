@@ -157,6 +157,18 @@ Pensez à ajouter l'URL de production dans les *Redirect URLs* de Supabase.
 - Fichiers dans des buckets **privés**, accès contrôlé par dossier, ouverture via URL signée de 60 s.
 - Comptes suspendus : perte immédiate de tout accès (vérifié à chaque requête).
 
+### Espaces école (directeurs, proviseurs, responsables de filière)
+
+- L'administrateur crée les établissements (menu *Établissements*) et nomme leur responsable par e-mail
+  (`school_add_staff`). Le directeur nomme ensuite ses responsables de filière, limités à certaines classes.
+- À l'inscription (ou dans son profil), l'élève choisit son établissement partenaire ; le responsable le valide
+  (`school_review_student`), ce qui active aussi son compte.
+- Menu *Mon école* : tableau de bord, élèves (validation, fiche, retrait), cours de l'école (réservés à ses élèves
+  validés), notes (export CSV), annonces de l'établissement, équipe.
+- Tout est vérifié par la base (migration `20261103000015_espaces_ecole.sql`) : `staff_covers`, `staff_sees_student`,
+  `in_school`. Un responsable ne voit jamais une autre école ; un responsable de filière seulement ses classes.
+  Les cours communautaires (`school_id` vide) restent ouverts comme avant.
+
 ### Enseignement supérieur (LMD)
 
 - Cycle `superieur` : classes L1, L2, L3, M1, M2 (migration `20261103000014_superieur_lmd.sql`), disciplines du

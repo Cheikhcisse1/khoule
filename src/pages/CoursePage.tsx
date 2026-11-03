@@ -6,6 +6,7 @@ import { useLoad } from '../lib/hooks';
 import { COURSE_SELECT } from '../lib/queries';
 import { CourseLiveControl, LiveNowButton } from '../components/LiveNow';
 import { COURSE_FORMAT, COURSE_STATUS, fullName } from '../lib/format';
+import { covers, useMySchools } from '../lib/schools';
 import type { Course } from '../lib/types';
 import { Badge, Button, Card, Empty, ErrorBox, RichText, Spinner, Tabs, useAction } from '../components/ui';
 import { ExercisesPanel, LessonsPanel, MaterialsPanel } from '../components/course/ContentPanels';
@@ -23,6 +24,7 @@ export function CoursePage() {
   const [tab, setTab] = useState<Tab>('lessons');
   const [liveKey, setLiveKey] = useState(0);
   const { run, busy } = useAction();
+  const { data: mySchools } = useMySchools(uid);
 
   const { data, error, loading, reload } = useLoad(async () => {
     const course = must(await supabase.from('courses').select(COURSE_SELECT).eq('id', id!).maybeSingle()) as unknown as Course | null;
@@ -40,7 +42,9 @@ export function CoursePage() {
     <Link to="/">Retour à l’accueil</Link></Empty></Card>;
 
   const { course, enrolled } = data;
-  const manage = isAdmin || course.instructor_id === uid;
+  // La direction de l'établissement gère aussi les cours de son école (la base le vérifie)
+  const manage = isAdmin || course.instructor_id === uid
+    || (!!course.school_id && covers(mySchools?.find((m) => m.school_id === course.school_id), course.class_id));
   const hasAccess = manage || enrolled;
   const color = course.subject?.color ?? '#1f7a4d';
 
@@ -73,6 +77,7 @@ export function CoursePage() {
             <Badge color={color}>{course.subject?.name}</Badge>
             <Badge>{course.class?.name}</Badge>
             {course.format && course.format !== 'cours' && <Badge tone="info">{COURSE_FORMAT[course.format]}</Badge>}
+            {course.school && <Badge tone="warning">🏫 {course.school.name}</Badge>}
             {course.status !== 'published' && <Badge tone="warning">{COURSE_STATUS[course.status]}</Badge>}
           </div>
           <h1>{course.title}</h1>

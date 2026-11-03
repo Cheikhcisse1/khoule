@@ -492,3 +492,8 @@ textarea { resize: vertical; }
 
 /* Quatre cycles (dont le supérieur) : deux colonnes sur écran moyen */
 @media (min-width: 861px) and (max-width: 1100px) { .levels { grid-template-columns: repeat(2, 1fr); } }
+
+/* Espaces école */
+.inline-form { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin-top: .6rem; }
+.inline-form input, .inline-form select { flex: 1 1 160px; }
+.link-btn { background: none; border: 0; padding: 0; color: var(--green-700); font: inherit; text-decoration: underline; cursor: pointer; }

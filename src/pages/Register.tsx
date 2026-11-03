@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase, translateError } from '../lib/supabase';
-import { useRefData } from '../lib/hooks';
+import { useLoad, useRefData } from '../lib/hooks';
+import type { School } from '../lib/types';
 import { CYCLES, CYCLE_ORDER, INSTRUCTOR_TYPES } from '../lib/format';
 import { Button, Field } from '../components/ui';
 import { checkPassword } from '../lib/password';
@@ -14,6 +15,7 @@ export function Register() {
   const [params, setParams] = useSearchParams();
   const kind: Kind = params.get('profil') === 'intervenant' ? 'intervenant' : 'eleve';
   const { data: ref } = useRefData();
+  const { data: schools } = useLoad(async () => (await supabase.from('schools').select('id,name,city').order('name')).data as Pick<School, 'id' | 'name' | 'city'>[] | null, []);
   const navigate = useNavigate();
 
   const [f, setF] = useState<Record<string, string>>({ instructor_type: 'enseignant' });
@@ -44,7 +46,7 @@ export function Register() {
     const common = { first_name: f.first_name?.trim(), last_name: f.last_name?.trim(), phone: f.phone?.trim() };
     const data = kind === 'eleve'
       ? {
-          ...common, role: 'student', class_id: f.class_id, school: f.school, birth_year: f.birth_year ?? '',
+          ...common, role: 'student', class_id: f.class_id, school: f.school, school_id: f.school_id ?? '', birth_year: f.birth_year ?? '',
           guardian_name: f.guardian_name, guardian_relation: f.guardian_relation,
           guardian_phone: f.guardian_phone, guardian_email: f.guardian_email, guardian_consent: isMinor ? consent : false,
         }
@@ -112,6 +114,14 @@ export function Register() {
                 <input type="number" min={1990} max={CURRENT_YEAR} value={f.birth_year ?? ''} onChange={set('birth_year')} />
               </Field>
             </div>
+            {!!schools?.length && (
+              <Field label="Mon établissement est partenaire" hint="Son responsable validera votre inscription et vous ouvrira les cours de l’établissement">
+                <select value={f.school_id ?? ''} onChange={set('school_id')}>
+                  <option value="">— Pas dans la liste —</option>
+                  {schools.map((s) => <option key={s.id} value={s.id}>{s.name}{s.city ? ` (${s.city})` : ''}</option>)}
+                </select>
+              </Field>
+            )}
             <Field label={higherEd ? 'Université ou école' : 'Établissement scolaire'} hint="Facultatif">
               <input value={f.school ?? ''} onChange={set('school')} placeholder={higherEd ? 'Ex. : UCAD, UGB, ISM…' : 'Ex. : École élémentaire de Khoulé'} />
             </Field>

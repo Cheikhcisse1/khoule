@@ -36,6 +36,8 @@ import { ProfilePage } from './pages/ProfilePage';
 import { InstructorPublicPage } from './pages/InstructorPublicPage';
 import { LibraryPage } from './pages/LibraryPage';
 import { AssistantPage } from './pages/AssistantPage';
+import { SchoolSpace } from './pages/SchoolSpace';
+import { AdminSchools } from './pages/admin/AdminSchools';
 import { isConfigured } from './lib/supabase';
 import { SetupNotice } from './pages/SetupNotice';
 
@@ -96,6 +98,8 @@ export default function App() {
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/annonces" element={<AnnouncementsPage />} />
         <Route path="/documents" element={<LibraryPage />} />
+        <Route path="/ecole" element={<SchoolSpace />} />
+        <Route path="/admin/ecoles" element={<RequireRole roles={['admin']}><AdminSchools /></RequireRole>} />
         <Route path="/assistant" element={<RequireRole roles={['student', 'instructor', 'admin']}><AssistantPage /></RequireRole>} />
         <Route path="/recherche" element={<SearchPage />} />
         <Route path="/profil" element={<ProfilePage />} />

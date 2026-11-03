@@ -7,6 +7,7 @@ import type { AppNotification, Role } from '../lib/types';
 import { Avatar } from './ui';
 import { Logo } from './Logo';
 import { ErrorBoundary } from './ErrorBoundary';
+import { useMySchools } from '../lib/schools';
 
 interface NavEntry { to: string; label: string; icon: string; end?: boolean; section?: string }
 
@@ -37,6 +38,7 @@ const NAV: Record<Role, NavEntry[]> = {
   admin: [
     { to: '/admin', label: 'Tableau de bord', icon: '📊', end: true },
     { to: '/admin/utilisateurs', label: 'Utilisateurs', icon: '👥', section: 'Communauté' },
+    { to: '/admin/ecoles', label: 'Établissements', icon: '🏫' },
     { to: '/admin/affectations', label: 'Affectations', icon: '🧑‍🏫' },
     { to: '/admin/annonces', label: 'Annonces', icon: '📢' },
     { to: '/messages', label: 'Messages', icon: '💬' },
@@ -60,9 +62,13 @@ export function Layout() {
   const location = useLocation();
 
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
+  // « Mon école » apparaît pour les responsables d'établissement (directeur, proviseur, filière)
+  const { data: mySchools } = useMySchools(profile?.id);
 
   if (!profile) return null;
-  const items = NAV[profile.role];
+  const items = mySchools?.length
+    ? [...NAV[profile.role].slice(0, 1), { to: '/ecole', label: 'Mon école', icon: '🏫' }, ...NAV[profile.role].slice(1)]
+    : NAV[profile.role];
 
   const onSearch = (e: FormEvent) => {
     e.preventDefault();

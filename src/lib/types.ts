@@ -39,6 +39,26 @@ export interface Student {
   guardian_email: string | null;
   guardian_consent: boolean;
   consent_at: string | null;
+  school_id: string | null;
+  school_status: 'pending' | 'approved' | 'rejected' | null;
+}
+
+export interface School {
+  id: string;
+  name: string;
+  kind: 'elementaire' | 'college' | 'lycee' | 'universite' | 'ecole_superieure' | 'autre';
+  city: string | null;
+  created_at: string;
+}
+
+export interface SchoolStaff {
+  school_id: string;
+  user_id: string;
+  title: string;
+  scope: 'school' | 'classes';
+  class_ids: number[];
+  school?: School;
+  profile?: PersonName;
 }
 
 export interface Instructor {
@@ -64,6 +84,8 @@ export interface Course {
   instructor_id: string;
   status: CourseStatus;
   format: 'cours' | 'td' | 'tp';
+  school_id: string | null;
+  school?: Pick<School, 'name'> | null;
   published_at: string | null;
   created_at: string;
   subject?: Pick<Subject, 'name' | 'color'>;
@@ -225,6 +247,7 @@ export interface Announcement {
   body: string;
   audience: 'all' | 'students' | 'instructors' | 'class';
   class_id: number | null;
+  school_id?: string | null;
   pinned: boolean;
   published_at: string;
   expires_at: string | null;

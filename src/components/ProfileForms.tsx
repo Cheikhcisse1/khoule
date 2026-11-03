@@ -3,7 +3,8 @@ import { useAuth } from '../auth/AuthProvider';
 import { must, supabase } from '../lib/supabase';
 import { useLoad, useRefData } from '../lib/hooks';
 import { CYCLES, CYCLE_ORDER, INSTRUCTOR_TYPES } from '../lib/format';
-import type { Instructor, Student } from '../lib/types';
+import type { Instructor, School, Student } from '../lib/types';
+import { SCHOOL_STATUS } from '../lib/schools';
 import { Button, Field, Spinner, useAction } from './ui';
 
 /** Nom / prénom (tous profils). */
@@ -144,6 +145,7 @@ export function InstructorProfileForm({ onSaved }: { onSaved?: () => void }) {
 export function StudentProfileForm() {
   const { student, refresh } = useAuth();
   const { data: ref } = useRefData();
+  const { data: schools } = useLoad(async () => must(await supabase.from('schools').select('id,name,city').order('name')) as Pick<School, 'id' | 'name' | 'city'>[], []);
   const [form, setForm] = useState<Partial<Student>>(student ?? {});
   const { busy, run } = useAction();
 
@@ -157,6 +159,7 @@ export function StudentProfileForm() {
     void run(async () => {
       must(await supabase.from('students').update({
         class_id: form.class_id ? Number(form.class_id) : null, school: form.school, phone: form.phone,
+        school_id: form.school_id || null,
         guardian_name: form.guardian_name, guardian_relation: form.guardian_relation,
         guardian_phone: form.guardian_phone, guardian_email: form.guardian_email,
         guardian_consent: form.guardian_consent,
@@ -174,6 +177,12 @@ export function StudentProfileForm() {
           </select>
         </Field>
         <Field label="Établissement"><input value={form.school ?? ''} onChange={setF('school')} /></Field>
+        <Field label="Établissement partenaire" hint={student.school_id ? `Statut : ${SCHOOL_STATUS[student.school_status ?? 'pending']}` : 'Si votre école a un espace sur Khoulé, son responsable validera votre demande.'}>
+          <select value={form.school_id ?? ''} onChange={setF('school_id')}>
+            <option value="">— Aucun —</option>
+            {schools?.map((s) => <option key={s.id} value={s.id}>{s.name}{s.city ? ` (${s.city})` : ''}</option>)}
+          </select>
+        </Field>
       </div>
       <fieldset className="fieldset">
         <legend>Parent ou tuteur légal</legend>
