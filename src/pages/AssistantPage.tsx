@@ -53,7 +53,7 @@ export function AssistantPage() {
       courseLink = c ? `/cours/${c.id}` : null;
     }
     const hist = must(await supabase.from('ai_messages').select('id,role,content')
-      .eq('user_id', uid).eq('mode', mode).eq('thread', thread).order('created_at').limit(60)) as Line[];
+      .eq('user_id', uid).eq('mode', mode).eq('thread', thread).order('id').limit(60)) as Line[];
     return { title, instructorId, courseLink, hist };
   }, [uid, mode, thread]);
 

@@ -222,7 +222,7 @@ Deno.serve(async (req) => {
     const chatMode = mode as 'tutor' | 'instructor';
     const { data: hist } = await admin.from('ai_messages').select('role,content')
       .eq('user_id', me.user.id).eq('mode', chatMode).eq('thread', thread)
-      .order('created_at', { ascending: false }).limit(12);
+      .order('id', { ascending: false }).limit(12);
     const messages: Msg[] = [
       { role: 'system', content: chatMode === 'tutor' ? tutorPrompt(ctx) : instructorPrompt(ctx) },
       ...((hist ?? []).reverse() as Msg[]),
