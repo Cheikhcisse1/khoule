@@ -47,6 +47,7 @@ export function LibraryPage() {
   const [kind, setKind] = useState('');
   const [q, setQ] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [editing, setEditing] = useState<LibraryDoc | null>(null);
   const { run } = useAction();
   const toast = useToast();
   // Responsable d'établissement : il consulte les documents de son école, il n'en dépose pas
@@ -143,11 +144,19 @@ export function LibraryPage() {
                 </span>
               </button>
               {(role === 'admin' || d.uploaded_by === profile!.id) && (
-                <ConfirmButton variant="ghost" message={`Supprimer « ${d.title} » ?`} onConfirm={() => void remove(d)} aria-label="Supprimer">🗑️</ConfirmButton>
+                <>
+                  <Button variant="ghost" onClick={() => setEditing(d)} aria-label="Modifier">✏️</Button>
+                  <ConfirmButton variant="ghost" message={`Supprimer « ${d.title} » ?`} onConfirm={() => void remove(d)} aria-label="Supprimer">🗑️</ConfirmButton>
+                </>
               )}
             </li>
           ))}
         </ul>
+      )}
+
+      {editing && (
+        <EditDocModal doc={editing} pairs={uploadPairs} onClose={() => setEditing(null)}
+          onDone={() => { setEditing(null); void reload(); }} />
       )}
 
       {uploading && (
@@ -234,6 +243,74 @@ function UploadModal({ pairs, userId, onClose, onDone }:
           <Badge>{files.length} fichier(s)</Badge>
           <Button type="button" variant="ghost" onClick={onClose}>Annuler</Button>
           <Button type="submit" loading={busy}>Publier</Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+/** Corriger un document déjà publié : classe, matière, type, année, titre, description.
+ *  L'administration peut choisir n'importe quelle classe ; l'auteur, seulement ses classes affectées. */
+function EditDocModal({ doc, pairs, onClose, onDone }:
+  { doc: LibraryDoc; pairs: Pair[]; onClose: () => void; onDone: () => void }) {
+  const { data: ref } = useRefData();
+  const [f, setF] = useState({
+    title: doc.title, description: doc.description ?? '', kind: doc.kind, year: doc.year ? String(doc.year) : '',
+    classId: String(doc.class_id), subjectId: String(doc.subject_id),
+  });
+  const { busy, run } = useAction();
+  if (!ref) return null;
+
+  const classes = ref.classes.filter((c) => pairs.some((p) => p.class_id === c.id) || c.id === doc.class_id);
+  const subjects = ref.subjects.filter((s) => pairs.some((p) => p.class_id === Number(f.classId) && p.subject_id === s.id)
+    || (Number(f.classId) === doc.class_id && s.id === doc.subject_id));
+  const moved = Number(f.classId) !== doc.class_id;
+
+  const save = (e: FormEvent) => {
+    e.preventDefault();
+    void run(async () => {
+      if (!f.subjectId) throw new Error('Choisissez la matière.');
+      must(await supabase.from('library_documents').update({
+        title: f.title.trim() || doc.title, description: f.description.trim() || null, kind: f.kind,
+        year: f.year ? Number(f.year) : null, class_id: Number(f.classId), subject_id: Number(f.subjectId),
+      }).eq('id', doc.id));
+      onDone();
+    }, moved ? 'Document déplacé : il est maintenant visible par la nouvelle classe.' : 'Document modifié.');
+  };
+
+  return (
+    <Modal open onClose={onClose} title="Modifier le document" wide>
+      <form className="form" onSubmit={save}>
+        <div className="grid-2">
+          <Field label="Classe" required>
+            <select value={f.classId} onChange={(e) => {
+              const first = pairs.find((p) => p.class_id === Number(e.target.value));
+              setF({ ...f, classId: e.target.value, subjectId: first ? String(first.subject_id) : '' });
+            }} required>
+              {classes.map((c) => <option key={c.id} value={c.id}>{c.code} — {c.name}</option>)}
+            </select>
+          </Field>
+          <Field label="Matière" required>
+            <select value={f.subjectId} onChange={(e) => setF({ ...f, subjectId: e.target.value })} required>
+              <option value="">Choisir…</option>
+              {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </Field>
+          <Field label="Type de document">
+            <select value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value })}>
+              {Object.entries(DOC_KINDS).map(([k, v]) => <option key={k} value={k}>{v.icon} {v.label}</option>)}
+            </select>
+          </Field>
+          <Field label="Année">
+            <input type="number" min={1980} max={2100} value={f.year} onChange={(e) => setF({ ...f, year: e.target.value })} />
+          </Field>
+        </div>
+        <Field label="Titre" required><input value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} required /></Field>
+        <Field label="Description"><textarea rows={2} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} /></Field>
+        {moved && <div className="alert alert-info">Le document ne sera plus visible par l’ancienne classe, seulement par la nouvelle.</div>}
+        <div className="modal-actions">
+          <Button type="button" variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button type="submit" loading={busy}>Enregistrer</Button>
         </div>
       </form>
     </Modal>
