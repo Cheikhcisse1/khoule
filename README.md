@@ -169,7 +169,7 @@ Pensez à ajouter l'URL de production dans les *Redirect URLs* de Supabase.
   le secret `GEMINI_API_KEY` existe. Secret requis : `GROQ_API_KEY`. Lectures avec la RLS de l'appelant.
 - Quotas quotidiens (offre gratuite Groq) : 30 questions par élève, 100 par intervenant (`AI_LIMIT_STUDENT`,
   `AI_LIMIT_STAFF`) ; un appel en échec n'est pas décompté. Historique (`ai_messages`) visible par son auteur et
-  l'admin, effaçable par l'auteur, purgé après 90 jours (`ai_cleanup()`).
+  l'admin, effaçable par l'auteur, purgé après 90 jours par la tâche pg_cron `ai-cleanup-nightly` (03:00 UTC, `ai_cleanup()`).
 
 ## 7. Tests
 
