@@ -1,0 +1,17 @@
+# Khoulé Éducation : seules les pages publiques sont à indexer ; l'espace connecté reste privé.
+User-agent: *
+Allow: /$
+Allow: /inscription
+Allow: /connexion
+Disallow: /admin
+Disallow: /eleve
+Disallow: /intervenant
+Disallow: /ecole
+Disallow: /cours
+Disallow: /messages
+Disallow: /profil
+Disallow: /assistant
+Disallow: /notes
+Disallow: /recherche
+
+Sitemap: https://khoule-education.vercel.app/sitemap.xml

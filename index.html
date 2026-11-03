@@ -3,16 +3,57 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Khoulé Éducation — cours de soutien toute la semaine, de la CI à la Terminale, animés par les ressortissants de Khoulé." />
+    <title>Khoulé Éducation · Soutien scolaire gratuit de la CI au Master (Khoulé, Sénégal)</title>
+    <meta name="description" content="Khoulé Éducation : plateforme gratuite de soutien scolaire de la CI à la Terminale et jusqu'au Master. Cours, TD, devoirs corrigés et assistant IA, avec des enseignants, professeurs et étudiants originaires de Khoulé (Sénégal)." />
+    <link rel="canonical" href="https://khoule-education.vercel.app/" />
+    <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#14532d" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <!-- Aperçu lors d'un partage (WhatsApp, Facebook, LinkedIn…) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Khoulé Éducation" />
+    <meta property="og:locale" content="fr_SN" />
+    <meta property="og:url" content="https://khoule-education.vercel.app/" />
+    <meta property="og:title" content="Khoulé Éducation · Soutien scolaire gratuit de la CI au Master" />
+    <meta property="og:description" content="Cours, TD, devoirs corrigés et assistant IA, avec les enseignants et étudiants originaires de Khoulé (Sénégal)." />
+    <meta name="twitter:card" content="summary" />
+
+    <!-- Données structurées pour Google -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "EducationalOrganization",
+        "name": "Khoulé Éducation",
+        "alternateName": "Khoule Education",
+        "url": "https://khoule-education.vercel.app/",
+        "description": "Plateforme gratuite de soutien scolaire communautaire de la CI à la Terminale et jusqu'au Master, animée par des enseignants, professeurs et étudiants originaires de Khoulé.",
+        "areaServed": { "@type": "Country", "name": "Sénégal" },
+        "address": { "@type": "PostalAddress", "addressLocality": "Khoulé", "addressCountry": "SN" },
+        "inLanguage": "fr"
+      }
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-    <title>Khoulé Éducation</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Contenu lisible avant le chargement de l'application (moteurs de recherche, connexions lentes) ; remplacé par React -->
+      <main style="max-width:720px;margin:48px auto;padding:0 20px;font-family:Nunito,system-ui,sans-serif;color:#1d2a22">
+        <h1>Khoulé Éducation</h1>
+        <p>Plateforme gratuite de soutien scolaire communautaire : des enseignants, professeurs et étudiants originaires de Khoulé (Sénégal)
+          accompagnent les élèves de la CI à la Terminale et les étudiants jusqu'au Master, en salle comme en ligne.</p>
+        <ul>
+          <li>Élémentaire, collège, lycée et supérieur (Licence, Master)</li>
+          <li>Cours, TD, devoirs corrigés, notes et suivi de la progression</li>
+          <li>« Coup de pouce » : un assistant IA qui aide l'élève bloqué sans faire le travail à sa place</li>
+          <li>Espaces pour les écoles partenaires : directeurs, proviseurs et responsables de filière</li>
+        </ul>
+        <p><a href="/inscription">Créer un compte élève ou étudiant</a> · <a href="/inscription?profil=intervenant">Je veux enseigner</a> · <a href="/connexion">Se connecter</a></p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
