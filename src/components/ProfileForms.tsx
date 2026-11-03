@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { must, supabase } from '../lib/supabase';
 import { useLoad, useRefData } from '../lib/hooks';
-import { CYCLES, INSTRUCTOR_TYPES } from '../lib/format';
+import { CYCLES, CYCLE_ORDER, INSTRUCTOR_TYPES } from '../lib/format';
 import type { Instructor, Student } from '../lib/types';
 import { Button, Field, Spinner, useAction } from './ui';
 
@@ -121,7 +121,7 @@ export function InstructorProfileForm({ onSaved }: { onSaved?: () => void }) {
       </fieldset>
       <fieldset className="fieldset">
         <legend>Classes que je souhaite accompagner</legend>
-        {(['elementaire', 'college', 'lycee'] as const).map((cy) => (
+        {CYCLE_ORDER.map((cy) => (
           <div key={cy} className="chips-group">
             <span className="muted small">{CYCLES[cy]}</span>
             <div className="chips">

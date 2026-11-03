@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { must, supabase } from '../../lib/supabase';
 import { useLoad, useRefData } from '../../lib/hooks';
-import { COURSE_STATUS, DAYS, formatDateTime, fromLocalInput, fullName, timeAgo, toLocalInput } from '../../lib/format';
+import { COURSE_FORMAT, COURSE_STATUS, DAYS, formatDateTime, fromLocalInput, fullName, timeAgo, toLocalInput } from '../../lib/format';
 import type { Course, CourseSession, Message, Question, Schedule } from '../../lib/types';
 import { Avatar, Badge, Button, ConfirmButton, Empty, ErrorBox, Field, Modal, Progress, Spinner, useAction } from '../ui';
 import { ScheduleLine, SessionItem } from '../CourseBits';
@@ -477,7 +477,7 @@ export function CourseSettingsPanel({ course, userId, onSaved, isAdmin }: PanelP
     must(await supabase.from('teaching_assignments').select('class_id, subject_id').eq('instructor_id', course.instructor_id)) as
       { class_id: number; subject_id: number }[], [course.instructor_id]);
   const [f, setF] = useState({ title: course.title, description: course.description ?? '', status: course.status,
-    pair: `${course.class_id}:${course.subject_id}` });
+    pair: `${course.class_id}:${course.subject_id}`, format: course.format ?? 'cours' });
   const { busy, run } = useAction();
 
   if (!ref || !allowed) return <Spinner />;
@@ -491,7 +491,7 @@ export function CourseSettingsPanel({ course, userId, onSaved, isAdmin }: PanelP
     e.preventDefault();
     const [class_id, subject_id] = f.pair.split(':').map(Number);
     void run(async () => {
-      must(await supabase.from('courses').update({ title: f.title, description: f.description, status: f.status, class_id, subject_id }).eq('id', course.id));
+      must(await supabase.from('courses').update({ title: f.title, description: f.description, status: f.status, format: f.format, class_id, subject_id }).eq('id', course.id));
       onSaved();
     }, 'Cours mis à jour.');
   };
@@ -509,6 +509,11 @@ export function CourseSettingsPanel({ course, userId, onSaved, isAdmin }: PanelP
         <Field label="Statut">
           <select value={f.status} onChange={(e) => setF({ ...f, status: e.target.value as Course['status'] })}>
             {Object.entries(COURSE_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
+        </Field>
+        <Field label="Format">
+          <select value={f.format} onChange={(e) => setF({ ...f, format: e.target.value as Course['format'] })}>
+            {Object.entries(COURSE_FORMAT).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
         </Field>
       </div>

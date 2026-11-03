@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase, translateError } from '../lib/supabase';
 import { useRefData } from '../lib/hooks';
-import { CYCLES, INSTRUCTOR_TYPES } from '../lib/format';
+import { CYCLES, CYCLE_ORDER, INSTRUCTOR_TYPES } from '../lib/format';
 import { Button, Field } from '../components/ui';
 import { checkPassword } from '../lib/password';
 import { AuthShell } from './AuthShell';
@@ -25,7 +25,9 @@ export function Register() {
 
   const set = (k: string) => (e: { target: { value: string } }) => setF((s) => ({ ...s, [k]: e.target.value }));
   const birthYear = Number(f.birth_year) || null;
-  const isMinor = kind === 'eleve' && (!birthYear || CURRENT_YEAR - birthYear < 18);
+  // Étudiant du supérieur : majeur par défaut, le parent/tuteur n'est demandé que s'il déclare moins de 18 ans
+  const higherEd = ref?.classes.find((c) => String(c.id) === f.class_id)?.cycle === 'superieur';
+  const isMinor = kind === 'eleve' && (higherEd ? !!birthYear && CURRENT_YEAR - birthYear < 18 : !birthYear || CURRENT_YEAR - birthYear < 18);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -33,7 +35,7 @@ export function Register() {
     const pwError = await checkPassword(f.password ?? '', [f.first_name ?? '', f.last_name ?? '', (f.email ?? '').split('@')[0]]);
     if (pwError) return setError(pwError);
     if (f.password !== f.password2) return setError('Les deux mots de passe ne correspondent pas.');
-    if (kind === 'eleve' && !f.class_id) return setError('Veuillez choisir votre classe.');
+    if (kind === 'eleve' && !f.class_id) return setError('Veuillez choisir votre classe ou votre niveau d’études.');
     if (isMinor && (!f.guardian_name || !f.guardian_phone))
       return setError('Pour un élève mineur, le nom et le téléphone du parent ou tuteur sont obligatoires.');
     if (isMinor && !consent) return setError('L’accord du parent ou tuteur est nécessaire.');
@@ -79,7 +81,7 @@ export function Register() {
     <AuthShell title="Créer un compte" subtitle="Rejoignez la communauté éducative de Khoulé." wide>
       <div className="segmented" role="radiogroup" aria-label="Type de compte">
         <button type="button" role="radio" aria-checked={kind === 'eleve'} className={kind === 'eleve' ? 'on' : ''}
-          onClick={() => setParams({ profil: 'eleve' })}>🎒 Je suis élève</button>
+          onClick={() => setParams({ profil: 'eleve' })}>🎒 Je suis élève ou étudiant</button>
         <button type="button" role="radio" aria-checked={kind === 'intervenant'} className={kind === 'intervenant' ? 'on' : ''}
           onClick={() => setParams({ profil: 'intervenant' })}>🧑‍🏫 Je veux enseigner</button>
       </div>
@@ -94,10 +96,10 @@ export function Register() {
         {kind === 'eleve' ? (
           <>
             <div className="grid-2">
-              <Field label="Classe actuelle" required>
+              <Field label="Classe ou niveau d’études" required>
                 <select value={f.class_id ?? ''} onChange={set('class_id')} required>
                   <option value="">Choisir…</option>
-                  {(['elementaire', 'college', 'lycee'] as const).map((cy) => (
+                  {CYCLE_ORDER.map((cy) => (
                     <optgroup key={cy} label={CYCLES[cy]}>
                       {ref?.classes.filter((c) => c.cycle === cy).map((c) => (
                         <option key={c.id} value={c.id}>{c.name} ({c.code})</option>
@@ -110,11 +112,11 @@ export function Register() {
                 <input type="number" min={1990} max={CURRENT_YEAR} value={f.birth_year ?? ''} onChange={set('birth_year')} />
               </Field>
             </div>
-            <Field label="Établissement scolaire" hint="Facultatif">
-              <input value={f.school ?? ''} onChange={set('school')} placeholder="Ex. : École élémentaire de Khoulé" />
+            <Field label={higherEd ? 'Université ou école' : 'Établissement scolaire'} hint="Facultatif">
+              <input value={f.school ?? ''} onChange={set('school')} placeholder={higherEd ? 'Ex. : UCAD, UGB, ISM…' : 'Ex. : École élémentaire de Khoulé'} />
             </Field>
 
-            <fieldset className="fieldset">
+            {(!higherEd || isMinor) && <fieldset className="fieldset">
               <legend>Parent ou tuteur légal {isMinor ? <span className="req">*</span> : <span className="muted">(facultatif pour un élève majeur)</span>}</legend>
               <div className="grid-2">
                 <Field label="Nom complet" required={isMinor}><input value={f.guardian_name ?? ''} onChange={set('guardian_name')} /></Field>
@@ -133,7 +135,7 @@ export function Register() {
                     uniquement pour l’accompagnement scolaire.</span>
                 </label>
               )}
-            </fieldset>
+            </fieldset>}
           </>
         ) : (
           <>
@@ -174,7 +176,7 @@ export function Register() {
         </label>
 
         <Button type="submit" loading={busy} className="btn-block">
-          {kind === 'eleve' ? 'Créer mon compte élève' : 'Envoyer ma candidature'}
+          {kind === 'eleve' ? (higherEd ? 'Créer mon compte étudiant' : 'Créer mon compte élève') : 'Envoyer ma candidature'}
         </Button>
         <p className="center muted">Déjà inscrit ? <Link to="/connexion">Se connecter</Link></p>
       </form>

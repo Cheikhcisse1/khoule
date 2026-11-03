@@ -1,7 +1,7 @@
 # Khoulé Éducation
 
 Plateforme éducative communautaire de soutien scolaire, toute la semaine selon les disponibilités des intervenants, pour les élèves de Khoulé (Sénégal),
-de la CI à la Terminale. Les cours sont animés par des enseignants, professeurs, étudiants et autres
+de la CI à la Terminale, et pour les étudiants du supérieur (système LMD, Licence 1 → Master 2) avec cours magistraux, TD et TP. Les cours sont animés par des enseignants, professeurs, étudiants et autres
 intervenants originaires de Khoulé.
 
 **Stack** : React 18 + TypeScript + Vite (frontend) · Supabase (Auth, PostgreSQL + RLS, Storage, Realtime, Edge Function).
@@ -156,6 +156,15 @@ Pensez à ajouter l'URL de production dans les *Redirect URLs* de Supabase.
   Téléphones des intervenants : admin uniquement. Consentement du tuteur horodaté.
 - Fichiers dans des buckets **privés**, accès contrôlé par dossier, ouverture via URL signée de 60 s.
 - Comptes suspendus : perte immédiate de tout accès (vérifié à chaque requête).
+
+### Enseignement supérieur (LMD)
+
+- Cycle `superieur` : classes L1, L2, L3, M1, M2 (migration `20261103000014_superieur_lmd.sql`), disciplines du
+  supérieur (droit, économie, gestion, sociologie, lettres, communication, plus les matières existantes).
+- Inscription « élève ou étudiant » : pour un niveau du supérieur, le parent/tuteur n'est demandé que si l'étudiant
+  déclare moins de 18 ans ; champ « Université ou école ».
+- Chaque cours a un format : cours magistral, TD ou TP (`courses.format`), affiché sur la fiche et la carte du cours.
+  Un enseignant du supérieur s'inscrit comme intervenant ; l'administration l'affecte au niveau et à la discipline.
 
 ### Assistant IA (gratuit)
 

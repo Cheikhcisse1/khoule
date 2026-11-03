@@ -6,6 +6,7 @@ import { useLoad } from '../../lib/hooks';
 import { fetchCourses } from '../../lib/queries';
 import type { Course } from '../../lib/types';
 import { Button, Card, Empty, ErrorBox, Field, Modal, PageHeader, Spinner, useAction } from '../../components/ui';
+import { COURSE_FORMAT } from '../../lib/format';
 import { CourseCard } from '../../components/CourseBits';
 
 interface Pair { class_id: number; subject_id: number; class: { code: string; name: string }; subject: { name: string } }
@@ -46,7 +47,7 @@ export function InstructorCourses() {
 
 export function NewCourseModal({ pairs, instructorId, onClose }:
   { pairs: Pair[]; instructorId: string; onClose: () => void }) {
-  const [f, setF] = useState({ title: '', description: '', pair: pairs[0] ? `${pairs[0].class_id}:${pairs[0].subject_id}` : '', publish: false });
+  const [f, setF] = useState({ title: '', description: '', pair: pairs[0] ? `${pairs[0].class_id}:${pairs[0].subject_id}` : '', publish: false, format: 'cours' });
   const { busy, run } = useAction();
   const navigate = useNavigate();
 
@@ -56,7 +57,7 @@ export function NewCourseModal({ pairs, instructorId, onClose }:
     void run(async () => {
       const c = must(await supabase.from('courses').insert({
         title: f.title, description: f.description, class_id, subject_id, instructor_id: instructorId,
-        status: f.publish ? 'published' : 'draft',
+        status: f.publish ? 'published' : 'draft', format: f.format,
       }).select('id').single()) as Pick<Course, 'id'>;
       navigate(`/cours/${c.id}`);
     }, 'Cours créé. Ajoutez maintenant vos leçons et supports.');
@@ -72,8 +73,13 @@ export function NewCourseModal({ pairs, instructorId, onClose }:
             ))}
           </select>
         </Field>
+        <Field label="Format" hint="Pour le supérieur : cours magistral, TD ou TP avec le même groupe d’étudiants">
+          <select value={f.format} onChange={(e) => setF({ ...f, format: e.target.value })}>
+            {Object.entries(COURSE_FORMAT).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
+        </Field>
         <Field label="Titre du cours" required>
-          <input value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} required minLength={3} placeholder="Ex. : Les fractions — révisions" />
+          <input value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} required minLength={3} placeholder="Ex. : Les fractions — révisions · Droit des obligations — TD groupe A" />
         </Field>
         <Field label="Description" hint="Objectifs, prérequis, matériel à apporter…">
           <textarea rows={4} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />

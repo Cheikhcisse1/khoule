@@ -5,6 +5,7 @@ const LEVELS = [
   { cycle: 'Élémentaire', classes: 'CI · CP · CE1 · CE2 · CM1 · CM2', icon: '✏️' },
   { cycle: 'Collège', classes: '6e · 5e · 4e · 3e', icon: '📐' },
   { cycle: 'Lycée', classes: 'Seconde · Première · Terminale', icon: '🎓' },
+  { cycle: 'Supérieur (LMD)', classes: 'Licence 1 → Master 2 · cours, TD et TP', icon: '🏛️' },
 ];
 
 const STEPS = [
@@ -31,10 +32,10 @@ export function Landing() {
           <h1>Ensemble, faisons réussir <span>les enfants de Khoulé</span>.</h1>
           <p className="hero-lead">
             Tout au long de la semaine, des enseignants, professeurs et étudiants originaires de Khoulé
-            accompagnent les élèves de la CI à la Terminale — en salle comme en ligne.
+            accompagnent les élèves de la CI à la Terminale et les étudiants jusqu’au Master — en salle comme en ligne.
           </p>
           <div className="hero-cta">
-            <Link to="/inscription?profil=eleve" className="btn btn-gold btn-lg">Je suis élève</Link>
+            <Link to="/inscription?profil=eleve" className="btn btn-gold btn-lg">Je suis élève ou étudiant</Link>
             <Link to="/inscription?profil=intervenant" className="btn btn-ghost-light btn-lg">Je veux enseigner</Link>
           </div>
         </div>
@@ -47,7 +48,7 @@ export function Landing() {
       </section>
 
       <section className="landing-section">
-        <h2>Toutes les classes, de la CI à la Terminale</h2>
+        <h2>De la CI au Master</h2>
         <div className="levels">
           {LEVELS.map((l) => (
             <div key={l.cycle} className="level">

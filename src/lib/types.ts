@@ -17,7 +17,7 @@ export interface SchoolClass {
   id: number;
   code: string;
   name: string;
-  cycle: 'elementaire' | 'college' | 'lycee';
+  cycle: 'elementaire' | 'college' | 'lycee' | 'superieur';
   sort_order: number;
 }
 
@@ -63,6 +63,7 @@ export interface Course {
   subject_id: number;
   instructor_id: string;
   status: CourseStatus;
+  format: 'cours' | 'td' | 'tp';
   published_at: string | null;
   created_at: string;
   subject?: Pick<Subject, 'name' | 'color'>;

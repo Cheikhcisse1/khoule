@@ -6,6 +6,17 @@ export const CYCLES: Record<string, string> = {
   elementaire: 'Élémentaire',
   college: 'Collège',
   lycee: 'Lycée',
+  superieur: 'Supérieur (LMD)',
+};
+
+/** Ordre d'affichage des cycles dans les listes. */
+export const CYCLE_ORDER = ['elementaire', 'college', 'lycee', 'superieur'] as const;
+
+/** Format pédagogique d'un cours (cours magistral, TD, TP). */
+export const COURSE_FORMAT: Record<string, string> = {
+  cours: 'Cours',
+  td: 'Travaux dirigés (TD)',
+  tp: 'Travaux pratiques (TP)',
 };
 
 export const INSTRUCTOR_TYPES: Record<string, string> = {

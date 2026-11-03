@@ -11,7 +11,7 @@ export function CourseCard({ course, footer }: { course: Course; footer?: ReactN
       <Link to={`/cours/${course.id}`} className="course-card-link">
         <div className="course-card-band">
           <span>{course.subject?.name}</span>
-          <span className="course-card-class">{course.class?.code}</span>
+          <span className="course-card-class">{course.format && course.format !== 'cours' ? `${course.format.toUpperCase()} · ` : ''}{course.class?.code}</span>
         </div>
         <div className="course-card-body">
           <h3>{course.title}</h3>

@@ -5,7 +5,7 @@ import { must, supabase } from '../lib/supabase';
 import { useLoad } from '../lib/hooks';
 import { COURSE_SELECT } from '../lib/queries';
 import { CourseLiveControl, LiveNowButton } from '../components/LiveNow';
-import { COURSE_STATUS, fullName } from '../lib/format';
+import { COURSE_FORMAT, COURSE_STATUS, fullName } from '../lib/format';
 import type { Course } from '../lib/types';
 import { Badge, Button, Card, Empty, ErrorBox, RichText, Spinner, Tabs, useAction } from '../components/ui';
 import { ExercisesPanel, LessonsPanel, MaterialsPanel } from '../components/course/ContentPanels';
@@ -72,6 +72,7 @@ export function CoursePage() {
           <div className="row">
             <Badge color={color}>{course.subject?.name}</Badge>
             <Badge>{course.class?.name}</Badge>
+            {course.format && course.format !== 'cours' && <Badge tone="info">{COURSE_FORMAT[course.format]}</Badge>}
             {course.status !== 'published' && <Badge tone="warning">{COURSE_STATUS[course.status]}</Badge>}
           </div>
           <h1>{course.title}</h1>
