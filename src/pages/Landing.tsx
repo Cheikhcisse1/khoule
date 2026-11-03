@@ -19,10 +19,10 @@ export function Landing() {
   return (
     <div className="landing">
       <header className="landing-nav">
-        <Logo light />
+        <Logo />
         <nav>
-          <Link to="/connexion" className="btn btn-ghost-light">Se connecter</Link>
-          <Link to="/inscription" className="btn btn-gold">Créer un compte</Link>
+          <Link to="/connexion" className="btn btn-ghost">Se connecter</Link>
+          <Link to="/inscription" className="btn btn-primary">Créer un compte</Link>
         </nav>
       </header>
 
@@ -35,8 +35,8 @@ export function Landing() {
             accompagnent les élèves de la CI à la Terminale et les étudiants jusqu’au Master — en salle comme en ligne.
           </p>
           <div className="hero-cta">
-            <Link to="/inscription?profil=eleve" className="btn btn-gold btn-lg">Je suis élève ou étudiant</Link>
-            <Link to="/inscription?profil=intervenant" className="btn btn-ghost-light btn-lg">Je veux enseigner</Link>
+            <Link to="/inscription?profil=eleve" className="btn btn-primary btn-lg">Je suis élève ou étudiant</Link>
+            <Link to="/inscription?profil=intervenant" className="btn btn-ghost btn-lg">Je veux enseigner</Link>
           </div>
         </div>
         <div className="hero-card" aria-hidden>
@@ -87,7 +87,7 @@ export function Landing() {
       </section>
 
       <footer className="landing-foot">
-        <Logo light />
+        <Logo />
         <p>Plateforme éducative communautaire · Données des élèves protégées et réservées à l’accompagnement scolaire.</p>
       </footer>
     </div>

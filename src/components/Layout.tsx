@@ -12,48 +12,54 @@ import { ForcePassword } from './ForcePassword';
 
 interface NavEntry { to: string; label: string; icon: string; end?: boolean; section?: string }
 
+// Icônes : noms Material Symbols (liste fixe chargée dans index.html, à compléter si on en ajoute une)
+// Menus courts et groupés : l'essentiel d'abord, puis Ressources et Échanges (repère : Google Classroom)
 const NAV: Record<Role, NavEntry[]> = {
   student: [
-    { to: '/eleve', label: 'Accueil', icon: '🏠', end: true },
-    { to: '/eleve/cours', label: 'Mes cours', icon: '📚' },
-    { to: '/eleve/devoirs', label: 'Devoirs', icon: '📝' },
-    { to: '/assistant', label: 'Coup de pouce (IA)', icon: '🤖' },
-    { to: '/eleve/notes', label: 'Notes & progression', icon: '📈' },
-    { to: '/documents', label: 'Documents & annales', icon: '📚' },
-    { to: '/calendrier', label: 'Calendrier', icon: '📅' },
-    { to: '/questions', label: 'Questions', icon: '❓' },
-    { to: '/messages', label: 'Messages', icon: '💬' },
-    { to: '/annonces', label: 'Annonces', icon: '📢' },
+    { to: '/eleve', label: 'Accueil', icon: 'home', end: true },
+    { to: '/eleve/cours', label: 'Mes cours', icon: 'menu_book' },
+    { to: '/eleve/devoirs', label: 'Devoirs', icon: 'assignment' },
+    { to: '/eleve/notes', label: 'Notes & progression', icon: 'insights' },
+    { to: '/assistant', label: 'Coup de pouce', icon: 'lightbulb' },
+    { to: '/documents', label: 'Documents & annales', icon: 'folder_open', section: 'Ressources' },
+    { to: '/calendrier', label: 'Calendrier', icon: 'calendar_month' },
+    { to: '/questions', label: 'Questions', icon: 'help', section: 'Échanges' },
+    { to: '/messages', label: 'Messages', icon: 'chat' },
+    { to: '/annonces', label: 'Annonces', icon: 'campaign' },
   ],
   instructor: [
-    { to: '/intervenant', label: 'Tableau de bord', icon: '🏠', end: true },
-    { to: '/intervenant/cours', label: 'Mes cours', icon: '📚' },
-    { to: '/documents', label: 'Documents & annales', icon: '📤' },
-    { to: '/intervenant/corrections', label: 'Corrections', icon: '✅' },
-    { to: '/assistant', label: 'Assistant IA', icon: '🤖' },
-    { to: '/calendrier', label: 'Calendrier', icon: '📅' },
-    { to: '/questions', label: 'Questions', icon: '❓' },
-    { to: '/messages', label: 'Messages', icon: '💬' },
-    { to: '/annonces', label: 'Annonces', icon: '📢' },
+    { to: '/intervenant', label: 'Tableau de bord', icon: 'home', end: true },
+    { to: '/intervenant/cours', label: 'Mes cours', icon: 'menu_book' },
+    { to: '/intervenant/corrections', label: 'Corrections', icon: 'task_alt' },
+    { to: '/assistant', label: 'Assistant IA', icon: 'smart_toy' },
+    { to: '/documents', label: 'Documents & annales', icon: 'upload_file', section: 'Ressources' },
+    { to: '/calendrier', label: 'Calendrier', icon: 'calendar_month' },
+    { to: '/questions', label: 'Questions', icon: 'help', section: 'Échanges' },
+    { to: '/messages', label: 'Messages', icon: 'chat' },
+    { to: '/annonces', label: 'Annonces', icon: 'campaign' },
   ],
   admin: [
-    { to: '/admin', label: 'Tableau de bord', icon: '📊', end: true },
-    { to: '/admin/utilisateurs', label: 'Utilisateurs', icon: '👥', section: 'Communauté' },
-    { to: '/admin/ecoles', label: 'Établissements', icon: '🏫' },
-    { to: '/admin/affectations', label: 'Affectations', icon: '🧑‍🏫' },
-    { to: '/admin/annonces', label: 'Annonces', icon: '📢' },
-    { to: '/messages', label: 'Messages', icon: '💬' },
-    { to: '/admin/cours', label: 'Tous les cours', icon: '📚', section: 'Pédagogie' },
-    { to: '/documents', label: 'Documents & annales', icon: '📤' },
-    { to: '/admin/referentiel', label: 'Classes & matières', icon: '🏫' },
-    { to: '/intervenant/corrections', label: 'Corrections & notes', icon: '✅' },
-    { to: '/calendrier', label: 'Calendrier', icon: '📅' },
-    { to: '/questions', label: 'Questions', icon: '❓', section: 'Contrôle' },
-    { to: '/admin/moderation', label: 'Modération', icon: '🛡️' },
-    { to: '/assistant', label: 'Assistant IA', icon: '🤖' },
-    { to: '/recherche', label: 'Recherche', icon: '🔍' },
+    { to: '/admin', label: 'Tableau de bord', icon: 'dashboard', end: true },
+    { to: '/admin/utilisateurs', label: 'Utilisateurs', icon: 'group', section: 'Communauté' },
+    { to: '/admin/ecoles', label: 'Établissements', icon: 'apartment' },
+    { to: '/admin/affectations', label: 'Affectations', icon: 'assignment_ind' },
+    { to: '/admin/annonces', label: 'Annonces', icon: 'campaign' },
+    { to: '/messages', label: 'Messages', icon: 'chat' },
+    { to: '/admin/cours', label: 'Tous les cours', icon: 'menu_book', section: 'Pédagogie' },
+    { to: '/documents', label: 'Documents & annales', icon: 'upload_file' },
+    { to: '/admin/referentiel', label: 'Classes & matières', icon: 'category' },
+    { to: '/intervenant/corrections', label: 'Corrections & notes', icon: 'task_alt' },
+    { to: '/calendrier', label: 'Calendrier', icon: 'calendar_month' },
+    { to: '/questions', label: 'Questions', icon: 'help', section: 'Contrôle' },
+    { to: '/admin/moderation', label: 'Modération', icon: 'shield' },
+    { to: '/assistant', label: 'Assistant IA', icon: 'smart_toy' },
+    { to: '/recherche', label: 'Recherche', icon: 'search' },
   ],
 };
+
+export function Icon({ name }: { name: string }) {
+  return <span className="material-symbols-rounded" aria-hidden>{name}</span>;
+}
 
 export function Layout() {
   const { profile, signOut } = useAuth();
@@ -68,7 +74,7 @@ export function Layout() {
 
   if (!profile) return null;
   const items = mySchools?.length
-    ? [...NAV[profile.role].slice(0, 1), { to: '/ecole', label: 'Mon école', icon: '🏫' }, ...NAV[profile.role].slice(1)]
+    ? [...NAV[profile.role].slice(0, 1), { to: '/ecole', label: 'Mon école', icon: 'school' }, ...NAV[profile.role].slice(1)]
     : NAV[profile.role];
 
   const onSearch = (e: FormEvent) => {
@@ -85,7 +91,7 @@ export function Layout() {
             <div key={i.to}>
               {i.section && <div className="nav-section">{i.section}</div>}
               <NavLink to={i.to} end={i.end} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                <span className="nav-icon" aria-hidden>{i.icon}</span>
+                <span className="nav-icon material-symbols-rounded" aria-hidden>{i.icon}</span>
                 {i.label}
               </NavLink>
             </div>
@@ -93,10 +99,10 @@ export function Layout() {
         </nav>
         <div className="sidebar-foot">
           <NavLink to="/profil" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-            <span className="nav-icon" aria-hidden>👤</span>Mon profil
+            <span className="nav-icon material-symbols-rounded" aria-hidden>account_circle</span>Mon profil
           </NavLink>
           <button className="nav-item" onClick={() => void signOut().then(() => navigate('/'))}>
-            <span className="nav-icon" aria-hidden>🚪</span>Se déconnecter
+            <span className="nav-icon material-symbols-rounded" aria-hidden>logout</span>Se déconnecter
           </button>
         </div>
       </aside>
@@ -104,9 +110,9 @@ export function Layout() {
 
       <div className="main">
         <header className="topbar">
-          <button className="icon-btn menu-btn" onClick={() => setMenuOpen((o) => !o)} aria-label="Ouvrir le menu">☰</button>
+          <button className="icon-btn menu-btn" onClick={() => setMenuOpen((o) => !o)} aria-label="Ouvrir le menu"><Icon name="menu" /></button>
           <form className="search" onSubmit={onSearch} role="search">
-            <span aria-hidden>🔍</span>
+            <Icon name="search" />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher un cours, une matière, un intervenant…"
               aria-label="Rechercher" />
           </form>
@@ -176,7 +182,7 @@ function NotificationBell({ userId }: { userId: string }) {
   return (
     <div className="bell" ref={ref}>
       <button className="icon-btn" onClick={() => setOpen((o) => !o)} aria-label={`Notifications (${unread} non lues)`}>
-        🔔{unread > 0 && <span className="bell-count">{unread > 9 ? '9+' : unread}</span>}
+        <Icon name="notifications" />{unread > 0 && <span className="bell-count">{unread > 9 ? '9+' : unread}</span>}
       </button>
       {open && (
         <div className="dropdown">

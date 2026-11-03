@@ -3,10 +3,11 @@ import { useAuth } from '../../auth/AuthProvider';
 import { must, supabase } from '../../lib/supabase';
 import { useLoad, useRefData } from '../../lib/hooks';
 import { SESSION_SELECT, fetchStudentWork, fetchUpcomingSessions, myEnrolledCourseIds } from '../../lib/queries';
-import { formatDate } from '../../lib/format';
+import { formatDate, formatDateTime } from '../../lib/format';
 import type { Announcement, CourseSession } from '../../lib/types';
-import { Card, Empty, ErrorBox, PageHeader, Progress, Spinner, StatCard } from '../../components/ui';
+import { Card, ErrorBox, PageHeader, Progress, Spinner, StatCard } from '../../components/ui';
 import { DueBadge, SessionItem } from '../../components/CourseBits';
+import { Icon } from '../../components/Layout';
 
 interface ProgressRow {
   course_id: string; title: string; subject: string; color: string;
@@ -43,6 +44,19 @@ export function StudentDashboard() {
   const todo = data.work.filter((w) => !w.submission);
   const graded = data.progress.filter((p) => p.average_pct !== null);
   const avg = graded.length ? Math.round(graded.reduce((s, p) => s + Number(p.average_pct), 0) / graded.length) : null;
+  const nextWork = [...todo].sort((a, b) => (a.assignment.due_at ?? '9999').localeCompare(b.assignment.due_at ?? '9999'))[0];
+
+  // Une seule « prochaine étape » : ce que l'élève doit faire maintenant
+  const next = data.ids.length === 0
+    ? { icon: 'menu_book', kicker: 'Pour commencer', title: 'Choisis les cours de ta classe', to: '/eleve/cours', cta: 'Voir les cours' }
+    : nextWork
+      ? { icon: 'assignment', kicker: 'Ta prochaine étape', title: nextWork.assignment.exercise?.title ?? 'Devoir à rendre',
+          sub: nextWork.assignment.course?.title, to: '/eleve/devoirs', cta: 'Faire le devoir', due: nextWork.assignment.due_at }
+      : data.sessions[0]
+        ? { icon: 'calendar_month', kicker: 'Prochaine séance', title: data.sessions[0].title,
+            sub: formatDateTime(data.sessions[0].starts_at), to: '/calendrier', cta: 'Voir le calendrier' }
+        : { icon: 'lightbulb', kicker: 'Tout est à jour', title: 'Une question sur une leçon ? Demande un coup de pouce.',
+            to: '/assistant', cta: 'Coup de pouce' };
 
   return (
     <>
@@ -59,20 +73,23 @@ export function StudentDashboard() {
         </div>
       ))}
 
+      <div className="next-step">
+        <span className="next-step-icon"><Icon name={next.icon} /></span>
+        <div className="next-step-text">
+          <small>{next.kicker}</small>
+          <strong>{next.title}</strong>
+          {'sub' in next && next.sub && <span className="small muted">{next.sub}</span>}
+        </div>
+        {'due' in next && <DueBadge due={next.due ?? null} submitted={false} />}
+        <Link to={next.to} className="btn btn-primary">{next.cta}</Link>
+      </div>
+
       <div className="stats">
         <StatCard icon="📚" label="Cours suivis" value={data.ids.length} />
         <StatCard icon="📝" label="Devoirs à rendre" value={todo.length} tone="gold" />
         <StatCard icon="⭐" label="Moyenne générale" value={avg !== null ? `${(avg / 5).toFixed(1)}/20` : '—'} tone="clay" />
         <StatCard icon="📅" label="Prochaines séances" value={data.sessions.length} tone="blue" />
       </div>
-
-      {data.ids.length === 0 && (
-        <Card>
-          <Empty icon="🎒" title="Vous n’êtes inscrit à aucun cours pour l’instant">
-            <Link to="/eleve/cours" className="btn btn-primary">Voir les cours de ma classe</Link>
-          </Empty>
-        </Card>
-      )}
 
       <div className="grid-dash">
         <Card title="Prochaines séances" actions={<Link to="/calendrier">Calendrier →</Link>}>
