@@ -8,6 +8,14 @@ const LEVELS = [
   { cycle: 'Supérieur (LMD)', classes: 'Licence 1 → Master 2 · cours, TD et TP', icon: '🏛️' },
 ];
 
+// Réseaux du fondateur affichés dans le pied de page : un lien vide n'est pas affiché
+const SOCIAL: { name: string; url: string }[] = [
+  { name: 'LinkedIn', url: '' },
+  { name: 'Facebook', url: '' },
+  { name: 'Instagram', url: '' },
+  { name: 'WhatsApp', url: '' },
+];
+
 const STEPS = [
   { n: '1', title: 'Je crée mon compte', text: 'L’élève indique sa classe ; le parent ou tuteur donne son accord.' },
   { n: '2', title: 'Je rejoins mes cours', text: 'Les cours de ma classe apparaissent : je m’inscris en un clic.' },
@@ -77,7 +85,7 @@ export function Landing() {
       <section className="landing-section">
         <div className="callout">
           <div>
-            <h2>Vous êtes ressortissant de Khoulé ?</h2>
+            <h2>Vous voulez transmettre ?</h2>
             <p>
               Enseignant, professeur, étudiant ou professionnel : donnez quelques heures par semaine, quand vous êtes disponible.
               Proposez votre candidature, l’équipe vous affecte aux classes et matières qui vous correspondent.
@@ -90,6 +98,14 @@ export function Landing() {
       <footer className="landing-foot">
         <Logo />
         <p>Plateforme éducative communautaire · Données des élèves protégées et réservées à l’accompagnement scolaire.</p>
+        {SOCIAL.some((x) => x.url) && (
+          <nav className="social" aria-label="Réseaux sociaux">
+            {SOCIAL.filter((x) => x.url).map((x) => (
+              <a key={x.name} href={x.url} target="_blank" rel="noopener noreferrer" className="chip">{x.name}</a>
+            ))}
+          </nav>
+        )}
+        <p className="small">© {new Date().getFullYear()} Khoulé Éducation</p>
       </footer>
     </div>
   );

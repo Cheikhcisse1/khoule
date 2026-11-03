@@ -539,3 +539,7 @@ textarea { resize: vertical; }
 .segmented-3 { grid-template-columns: repeat(3, 1fr); border-radius: 16px; }
 .segmented-3 button { border-radius: 12px; display: grid; gap: .1rem; line-height: 1.2; padding: .6rem .4rem; }
 .segmented-3 button small { font-weight: 600; font-size: .75rem; color: var(--muted); }
+
+/* Pied de page : réseaux sociaux */
+.social { display: flex; flex-wrap: wrap; gap: .5rem; }
+.social .chip { color: var(--ink); text-decoration: none; font-weight: 700; }
