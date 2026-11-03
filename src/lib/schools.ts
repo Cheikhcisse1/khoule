@@ -48,6 +48,12 @@ export function useMySchools(uid: string | undefined) {
   return useLoad(async () => (uid ? loadMySchools(uid) : []), [uid]);
 }
 
+/** Cycles de classes proposés selon le type d'établissement (« autre » : toutes les classes). */
+export const KIND_CYCLES: Record<string, string[] | null> = {
+  elementaire: ['elementaire'], college: ['college'], lycee: ['lycee'],
+  universite: ['superieur'], ecole_superieure: ['superieur'], autre: null,
+};
+
 /** Le responsable couvre-t-il cette classe de cette école ? (affichage seulement ; la base vérifie aussi) */
 export const covers = (st: SchoolStaff | undefined, classId: number | null | undefined) =>
   !!st && (st.scope === 'school' || (classId != null && st.class_ids.includes(classId)));

@@ -444,3 +444,24 @@ revoke execute on function public.staff_covers(uuid, smallint), public.is_school
   public.staff_sees_student(uuid), public.in_school(uuid), public.protect_course_school() from public, anon;
 grant execute on function public.staff_covers(uuid, smallint), public.is_school_staff(uuid), public.is_school_director(uuid),
   public.staff_sees_student(uuid), public.in_school(uuid) to authenticated;
+
+-- Suppression d'une école (on delete set null) : le statut de rattachement est effacé avec elle
+create or replace function public.protect_student_fields() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  if new.guardian_consent and not old.guardian_consent then
+    new.consent_at := now();
+  end if;
+  if auth.uid() is not null and not public.is_admin()
+     and coalesce(current_setting('khoule.trusted', true), '') <> 'on' then
+    if new.school_id is distinct from old.school_id then
+      new.school_status := case when new.school_id is null then null else 'pending' end;
+    else
+      new.school_status := old.school_status;
+    end if;
+  end if;
+  if new.school_id is null then
+    new.school_status := null;
+  end if;
+  return new;
+end $$;

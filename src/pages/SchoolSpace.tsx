@@ -5,7 +5,7 @@ import { must, supabase } from '../lib/supabase';
 import { useLoad, useRefData } from '../lib/hooks';
 import { COURSE_SELECT } from '../lib/queries';
 import { COURSE_FORMAT, formatDate, fullName } from '../lib/format';
-import { SCHOOL_KINDS, SCHOOL_STATUS, STAFF_TITLES, covers, loadMySchools, useMySchools } from '../lib/schools';
+import { KIND_CYCLES, SCHOOL_KINDS, SCHOOL_STATUS, STAFF_TITLES, covers, loadMySchools, useMySchools } from '../lib/schools';
 import type { Announcement, Course, PersonName, SchoolStaff, Student } from '../lib/types';
 import { CourseCard } from '../components/CourseBits';
 import {
@@ -94,7 +94,9 @@ function SchoolPanels({ st, tab, setTab, uid }: { st: SchoolStaff; tab: Tab; set
   if (error || !data) return <ErrorBox error={error ?? ''} onRetry={reload} />;
 
   const cls = (id: number | null) => ref.classes.find((c) => c.id === id);
-  const myClasses = ref.classes.filter((c) => covers(st, c.id));
+  // Classes de l'établissement (selon son type) que ce responsable couvre
+  const cycles = KIND_CYCLES[st.school?.kind ?? 'autre'];
+  const myClasses = ref.classes.filter((c) => covers(st, c.id) && (st.scope === 'classes' || !cycles || cycles.includes(c.cycle)));
   const pending = data.students.filter((s) => s.school_status === 'pending');
   const approved = data.students.filter((s) => s.school_status === 'approved');
   const avg = (rows: GradeRow[]) => rows.length ? rows.reduce((t, g) => t + (Number(g.score) / Number(g.max_score)) * 20, 0) / rows.length : null;
@@ -437,7 +439,7 @@ function TeamPanel({ st }: { st: SchoolStaff }) {
           <fieldset className="fieldset">
             <legend>Classes confiées</legend>
             <div className="chips">
-              {ref.classes.map((c) => (
+              {ref.classes.filter((c) => { const cy = KIND_CYCLES[st.school?.kind ?? 'autre']; return !cy || cy.includes(c.cycle); }).map((c) => (
                 <label key={c.id} className={`chip ${f.classes.includes(c.id) ? 'on' : ''}`}>
                   <input type="checkbox" checked={f.classes.includes(c.id)} onChange={() => toggle(c.id)} />{c.code}
                 </label>
